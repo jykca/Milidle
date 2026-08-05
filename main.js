@@ -9,9 +9,11 @@ const guessTracker = document.querySelector('.guessTracker');
 const progressBar = document.querySelector('.progressBar');
 const shareButton = document.querySelector('.shareButton');
 const shareMessage = document.querySelector('.shareMessage');
+const volumeBar = document.querySelector('.volumeBar');
 
 let guessCount = 0;
 let correctToggle = false;
+let focusIndex = -1;
 
 const songList = [
     { name: "Space Colony", file: "space_colony.mp3" },
@@ -162,12 +164,25 @@ let songString = 'Music/' + songToday.file;
 audioFile.src = songString;
 audioFile.parentElement.load();
 
-const startTime = 83; // 1:23
-const endTime = 88;   // 1:28
+let startTime = 0;
+let endTime = 5;
+let songLength = 0;
 
-// When metadata is loaded, jump to the start
 audioPlayer.addEventListener('loadedmetadata', () => {
-  audioPlayer.currentTime = startTime;
+    console.log("Metadata loaded!");
+    console.log("Duration:", audioFile.duration);
+
+    songLength = audioPlayer.duration;
+
+    console.log("songLength:", songLength);
+
+    setGuessTime();
+});
+
+//volume bar
+audioPlayer.volume = volumeBar.value;
+volumeBar.addEventListener('input', () => {
+    audioPlayer.volume = volumeBar.value; 
 });
 
 // Stop playback after 5 seconds
@@ -204,6 +219,7 @@ inputBox.onfocus = () => {
 
 inputBox.onblur = () => {
     songContainer.classList.toggle("active");
+    focusIndex = -1;
 }
 
 inputBox.addEventListener('keydown', (event) => {
@@ -212,20 +228,43 @@ inputBox.addEventListener('keydown', (event) => {
         return; // if the correct songle is already guessed, stop taking more guesses
     }
 
-    if (event.key === 'Enter' && inputBox.value === songToday.name) {
+    if (event.key === 'Enter' && inputBox.value === songToday.name && focusIndex == -1) {
         console.log("Correct song entered!");
         resultContainer.classList.add("active");
         correctToggle = true;
         shareMessage.textContent = `I guessed today's Mili song in ${guessCount + 1} guesses!`;
         boxes[guessCount].style.backgroundColor = "#00ff00"; // Change to green
         guessCount++;
-    } else if (event.key === 'Enter' && inputBox.value !== songToday.name) {
+    } else if (event.key === 'Enter' && inputBox.value !== songToday.name && focusIndex == -1) {
         console.log("Incorrect song entered.");
         resultContainer.classList.remove("active");
         inputBox.value = ""; //clear input
         boxes[guessCount].style.backgroundColor = "#ff0000"; // Change to red
         guessCount++;
+        setGuessTime();
     } 
+
+    //lets the user navigate the dropdown with arrow keys
+    const songItems = document.querySelectorAll('.song');
+
+    if ((event.key === "ArrowDown" || event.key === "ArrowUp") && focusIndex < 0) {
+        focusIndex = 0;
+    } else if (event.key === "ArrowDown") {
+        songItems[focusIndex].classList.remove('focused');
+        focusIndex = (focusIndex + 1) % songItems.length;
+    } else if (event.key === "ArrowUp") {
+        songItems[focusIndex].classList.remove('focused');
+        focusIndex = (focusIndex - 1 + songItems.length) % songItems.length;
+    } else if (event.key === "Enter") {
+        songItems[focusIndex].classList.remove('focused');
+        if (focusIndex >= 0 && focusIndex < songItems.length) {
+                inputBox.value = songItems[focusIndex].textContent;
+                focusIndex = -1;
+        }
+    }
+
+    console.log("Focus index:", focusIndex);
+    songItems[focusIndex].classList.add('focused');
 });
 
 document.addEventListener("mousedown", (event) => {
@@ -244,6 +283,8 @@ inputBox.addEventListener('input', () => {
     const search = inputBox.value.toLowerCase();
     const filteredSongs = songList.filter(song => song.name.toLowerCase().includes(search));
     displaySongs(filteredSongs);
+
+    
 });
 
 playButton.addEventListener("mousedown", () => {
@@ -314,3 +355,29 @@ function copyTextToClipboard(text) {
     
     }
 }
+
+function setGuessTime() {
+
+    if (guessCount === 0) {
+        startTime = 0.2 * songLength;
+        endTime = startTime + 5;
+    } else if (guessCount === 1) {
+        startTime = 0.4 * songLength;
+        endTime = startTime + 5;
+    } else if (guessCount === 2) {
+        startTime = 0.6 * songLength;
+        endTime = startTime + 5;
+    } else if (guessCount === 3) {
+        startTime = 0.8 * songLength;
+        endTime = startTime + 5;
+    } else if (guessCount === 4) {
+        startTime = 0;
+        endTime = songLength;
+        progressBar.max = songLength;
+    }
+
+    audioPlayer.currentTime = startTime;
+    console.log(`Guess ${guessCount + 1}: Start time set to ${startTime.toFixed(2)} seconds, End time set to ${endTime.toFixed(2)} seconds.`);
+    console.log(`Song length: ${songLength.toFixed(2)} seconds.`);
+};
+
