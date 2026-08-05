@@ -288,7 +288,7 @@ inputBox.addEventListener('input', () => {
 });
 
 playButton.addEventListener("mousedown", () => {
-      if (audioPlayer.paused && audioPlayer.currentTime >= endTime) {
+      if (audioPlayer.paused && audioPlayer.currentTime + 1 >= endTime) {
 
         // If the audio has finished playing, reset to start time and play again
         audioPlayer.currentTime = startTime;
