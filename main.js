@@ -10,6 +10,7 @@ const progressBar = document.querySelector('.progressBar');
 const shareButton = document.querySelector('.shareButton');
 const shareMessage = document.querySelector('.shareMessage');
 const volumeBar = document.querySelector('.volumeBar');
+const resultsButton = document.querySelector('.resultsButton');
 
 let guessCount = 0;
 let correctToggle = false;
@@ -231,15 +232,17 @@ inputBox.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && inputBox.value === songToday.name && focusIndex == -1) {
         console.log("Correct song entered!");
         resultContainer.classList.add("active");
+        console.log(resultsButton);
+        resultsButton.classList.add("active");
         correctToggle = true;
         shareMessage.textContent = `I guessed today's Mili song in ${guessCount + 1} guesses!`;
-        boxes[guessCount].style.backgroundColor = "#00ff00"; // Change to green
+        boxes[guessCount].style.backgroundColor = "#68c168"; // Change to green
         guessCount++;
     } else if (event.key === 'Enter' && inputBox.value !== songToday.name && focusIndex == -1) {
         console.log("Incorrect song entered.");
         resultContainer.classList.remove("active");
         inputBox.value = ""; //clear input
-        boxes[guessCount].style.backgroundColor = "#ff0000"; // Change to red
+        boxes[guessCount].style.backgroundColor = "#d44c4c"; // Change to red
         guessCount++;
         setGuessTime();
     } 
@@ -381,3 +384,6 @@ function setGuessTime() {
     console.log(`Song length: ${songLength.toFixed(2)} seconds.`);
 };
 
+function toggleResults() {
+    resultContainer.classList.toggle("active");
+}

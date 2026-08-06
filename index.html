@@ -2,6 +2,12 @@
 
 <html lang="en">
   <head>
+    <title>
+      Guess the Mili Song
+    </title>
+
+    <link rel="icon" type="image/png" href="icon.png">
+
     <style>
       body {
         background-color: lightblue;
@@ -118,9 +124,13 @@
         cursor: pointer;
       }
 
+      .playButton:hover {
+        background-color: #2c7f9a;
+      }
+
       .resultContainer {
         width: 300px;
-        height: 400px;
+        height: 125px;
 
         position: fixed;
 
@@ -157,7 +167,7 @@
       }
 
       .guessTracker{
-        width: 300px;
+        width: 260px;
         height: 50px;
         display: flex;
         border:#000000 2px solid;
@@ -180,6 +190,7 @@
         width: 300px;
         margin: 20px auto;
         display: block;
+        cursor: pointer;
       }
 
       .volumeContainer {
@@ -191,6 +202,32 @@
 
       .volumeBar {
         width: 100px;
+        cursor: pointer;
+      }
+
+      .resultsButton {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 20px auto;
+
+        width: 150px;
+        height: 50px;
+        border: 2px solid #2a5953;
+        border-radius: 5px;
+        background-color: #3391b0;
+        color: white;
+        cursor: pointer;
+        display: none;
+      }
+
+      .resultsButton.active {
+        display: flex;
+        transition: all 3s ease;
+      }
+
+      .resultsButton:hover {
+        background-color: #2c7f9a;
       }
 
       
@@ -269,7 +306,7 @@
 
     <!-- Result -->
     <div class="resultContainer">
-      <p class="reslts">You got it correct in # guesses!</p>
+      <!--<p class="reslts">You got it correct in # guesses!</p>-->
 
       <p class="shareMessage"></p>
 
@@ -277,6 +314,11 @@
     </div>
 
 
-    <script src="main.js"></script>
+    <!-- See results again -->
+     <div>
+      <button class="resultsButton" onclick="toggleResults()">See Results Again</button>
+     </div>
+
+     <script src="main.js"></script>
   </body>
 </html>
