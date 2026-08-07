@@ -11,9 +11,15 @@ const shareButton = document.querySelector('.shareButton');
 const shareMessage = document.querySelector('.shareMessage');
 const volumeBar = document.querySelector('.volumeBar');
 const resultsButton = document.querySelector('.resultsButton');
+const reslts = document.querySelector('.reslts');
+const helpContainer = document.querySelector('.helpContainer');
+const helpButton = document.querySelector('.helpButton');
+//const resultsBar = document.querySelector('.resultsBar');
+//const resultsPlayButton = document.querySelector('.resultsPlayButton');
+const torinoImage = document.querySelector('.torino');
 
-let guessCount = 0;
-let correctToggle = false;
+let guessCount = Number(localStorage.getItem("guessCount")) || 0;
+let correctToggle = localStorage.getItem("correctToggle") === "true";
 let focusIndex = -1;
 
 const songList = [
@@ -186,6 +192,10 @@ volumeBar.addEventListener('input', () => {
     audioPlayer.volume = volumeBar.value; 
 });
 
+torinoImage.addEventListener("click", () => {
+    window.open("https://x.com/july_sp_/status/1666155624068153344", "_blank");
+});
+
 // Stop playback after 5 seconds
 audioPlayer.addEventListener('timeupdate', () => {
   if (audioPlayer.currentTime >= endTime) {
@@ -193,7 +203,36 @@ audioPlayer.addEventListener('timeupdate', () => {
     audioPlayer.currentTime = endTime;
     playButton.innerHTML = "&#9654;";
   } 
+  
 });
+
+/*
+function setupAudioPlayer(audio, button, progressBar) {
+
+    button.addEventListener("mousedown", () => {
+        if (audio.paused && audio.currentTime + 1 >= endTime) {
+
+            // If the audio has finished playing, reset to start time and play again
+            audio.currentTime = startTime;
+            audio.play();
+            audio.innerHTML = "&#10074;&#10074;";
+            requestAnimationFrame(updateProgress);
+
+        } else if (audio.paused) {
+
+            //console.log(songString);
+            audio.play();
+            audio.innerHTML = "&#10074;&#10074;"; // Change to pause icon
+            requestAnimationFrame(updateProgress);
+
+        } else {
+
+            audio.pause();    
+            button.innerHTML = "&#9654;"; // Change to play icon
+        }
+    });
+}
+ */
 
 progressBar.addEventListener('input', () => {
     audioPlayer.currentTime = startTime + parseFloat(progressBar.value);
@@ -208,6 +247,8 @@ for (let i = 0; i < 5; i++) {
 
 const boxes = document.querySelectorAll('.guessBox');
 
+loadGameState();
+
 //creates the dropdown list of songs in alphabetical order
 songList.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -215,13 +256,17 @@ displaySongs(songList);
 
 inputBox.onfocus = () => {
     console.log(songString);
-    songContainer.classList.toggle("active");
+    songContainer.classList.add("active");
 }
 
 inputBox.onblur = () => {
-    songContainer.classList.toggle("active");
+    songContainer.classList.remove("active");
     focusIndex = -1;
 }
+
+helpButton.addEventListener("click", () => {
+    helpContainer.classList.toggle("active");
+});
 
 inputBox.addEventListener('keydown', (event) => {
 
@@ -229,22 +274,25 @@ inputBox.addEventListener('keydown', (event) => {
         return; // if the correct songle is already guessed, stop taking more guesses
     }
 
-    if (event.key === 'Enter' && inputBox.value === songToday.name && focusIndex == -1) {
+    if (event.key === 'Enter' && inputBox.value.toLowerCase() === songToday.name.toLowerCase() && focusIndex == -1) {
         console.log("Correct song entered!");
-        resultContainer.classList.add("active");
-        console.log(resultsButton);
-        resultsButton.classList.add("active");
         correctToggle = true;
-        shareMessage.textContent = `I guessed today's Mili song in ${guessCount + 1} guesses!`;
         boxes[guessCount].style.backgroundColor = "#68c168"; // Change to green
-        guessCount++;
-    } else if (event.key === 'Enter' && inputBox.value !== songToday.name && focusIndex == -1) {
+        songContainer.classList.remove("active");
+        printResults();
+        saveGameState();
+    } else if (event.key === 'Enter' && inputBox.value.toLowerCase() !== songToday.name.toLowerCase() && focusIndex == -1) {
         console.log("Incorrect song entered.");
-        resultContainer.classList.remove("active");
         inputBox.value = ""; //clear input
+        displaySongs(songList);
         boxes[guessCount].style.backgroundColor = "#d44c4c"; // Change to red
-        guessCount++;
+        if (guessCount === 4) {
+            printResults();
+        } else {
+            guessCount++;
+        }
         setGuessTime();
+        saveGameState();
     } 
 
     //lets the user navigate the dropdown with arrow keys
@@ -266,7 +314,7 @@ inputBox.addEventListener('keydown', (event) => {
         }
     }
 
-    console.log("Focus index:", focusIndex);
+    //console.log("Focus index:", focusIndex);
     songItems[focusIndex].classList.add('focused');
 });
 
@@ -275,10 +323,14 @@ document.addEventListener("mousedown", (event) => {
     if (resultContainer.classList.contains("active") && !resultContainer.contains(event.target)) {
         resultContainer.classList.remove("active");
     }
+    if (helpContainer.classList.contains("active") && !helpContainer.contains(event.target)) {
+        helpContainer.classList.remove("active");
+    }
 });
 
 shareButton.addEventListener("click", () => {
-    copyTextToClipboard(shareMessage.textContent);
+    let shareMessageAndLink = shareMessage.textContent + "\nhttps://jykca.github.io/";
+    copyTextToClipboard(shareMessageAndLink);
 });
 
 //reorder the dropdown based on the input
@@ -286,8 +338,6 @@ inputBox.addEventListener('input', () => {
     const search = inputBox.value.toLowerCase();
     const filteredSongs = songList.filter(song => song.name.toLowerCase().includes(search));
     displaySongs(filteredSongs);
-
-    
 });
 
 playButton.addEventListener("mousedown", () => {
@@ -312,7 +362,6 @@ playButton.addEventListener("mousedown", () => {
         playButton.innerHTML = "&#9654;"; // Change to play icon
     }
 });
-
 
 function displaySongs(songList) {
     //clear whatever was there before
@@ -380,10 +429,52 @@ function setGuessTime() {
     }
 
     audioPlayer.currentTime = startTime;
-    console.log(`Guess ${guessCount + 1}: Start time set to ${startTime.toFixed(2)} seconds, End time set to ${endTime.toFixed(2)} seconds.`);
-    console.log(`Song length: ${songLength.toFixed(2)} seconds.`);
+    //console.log(`Guess ${guessCount + 1}: Start time set to ${startTime.toFixed(2)} seconds, End time set to ${endTime.toFixed(2)} seconds.`);
+    //console.log(`Song length: ${songLength.toFixed(2)} seconds.`);
 };
 
 function toggleResults() {
     resultContainer.classList.toggle("active");
 }
+
+function saveGameState(){
+    localStorage.setItem("guessCount", guessCount);
+    localStorage.setItem("correctToggle", correctToggle);
+}
+
+function loadGameState() {
+    for (let i = 0; i < guessCount; i++) {
+        boxes[i].style.backgroundColor = "#d44c4c";
+    }
+
+    if (correctToggle) {
+        boxes[guessCount].style.backgroundColor = "#68c168";
+        printResults();
+    }
+}
+
+function printResults() {
+    resultContainer.classList.add("active");
+    //console.log(resultsButton);
+    resultsButton.classList.add("active");
+
+    
+
+    reslts.innerHTML = `The correct answer was: <b>${songToday.name}</b>`;
+
+    if (correctToggle) {
+        if (guessCount === 0) {
+            shareMessage.innerHTML = `I guessed today's Mili song in 1 guess!`;
+        } else if (guessCount > 0) {
+            shareMessage.innerHTML = `I guessed today's Mili song in ${guessCount + 1} guesses!`;
+        }
+    } else {
+        shareMessage.textContent = `I couldn't guess today's Mili song...`;
+    }
+}
+
+function reset() {
+    localStorage.clear();
+    location.reload();
+}
+
