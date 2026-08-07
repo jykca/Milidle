@@ -282,6 +282,14 @@ inputBox.addEventListener('keydown', (event) => {
         printResults();
         saveGameState();
     } else if (event.key === 'Enter' && inputBox.value.toLowerCase() !== songToday.name.toLowerCase() && focusIndex == -1) {
+
+        const songExists = songList.some(song => song.name.toLowerCase() === inputBox.value.toLowerCase());
+
+        if (songExists === false) {
+            console.log("That song doesn't exist!");
+            return;
+        }
+
         console.log("Incorrect song entered.");
         inputBox.value = ""; //clear input
         displaySongs(songList);
