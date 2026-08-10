@@ -17,10 +17,19 @@ const helpButton = document.querySelector('.helpButton');
 //const resultsBar = document.querySelector('.resultsBar');
 //const resultsPlayButton = document.querySelector('.resultsPlayButton');
 const torinoImage = document.querySelector('.torino');
+const body = document.querySelector('body');
+const endlessButton = document.querySelector('.endlessButton');
+const scoreCounter = document.querySelector('.scoreCounter');
+const endlessList = document.querySelector('.endlessList');
+const restartButton = document.querySelector('.restartButton');
+
 
 let guessCount = Number(localStorage.getItem("guessCount")) || 0;
 let correctToggle = localStorage.getItem("correctToggle") === "true";
 let focusIndex = -1;
+let maxStreak = Number(localStorage.getItem("streak")) || 0;;
+let currentStreak = 0;
+let livesLeft = 5;
 
 const songList = [
     { name: "Space Colony", file: "space_colony.mp3" },
@@ -47,7 +56,6 @@ const songList = [
     { name: "Fossil", file: "fossil.mp3" },
     { name: "Ikutoshitsuki", file: "ikutoshitsuki.mp3" },
     { name: "Mirror Mirror", file: "mirror_mirror.mp3" },
-    { name: "Utopiosphere -Platonism-", file: "utopiosphere.mp3" },
     { name: "Iron Lotus", file: "iron_lotus.mp3" },
     { name: "Dancing Ghost's Ball Jointed Darling", file: "dancing_ghosts_ball_jointed_darling.mp3" },
     { name: "Between Two Worlds", file: "between_two_worlds.mp3" },
@@ -154,22 +162,23 @@ const songList = [
     { name: "-NENTEN-", file: "nenten.mp3" }
 ];
 
+let mode = 0; //0 = normal mode, 1 = endless, more to come?
+
 //get current date and time
 const startingDate = new Date("2026-8-1");
 const currentDate = new Date();
 const dateString = currentDate.toLocaleDateString();
 
 let daysPassed = Math.floor((currentDate - startingDate) / (1000 * 60 * 60 * 24));
-dayCounter.textContent = "Day " + (daysPassed + 1) + " - " + dateString;
 
 //picks a song based on the number of days passed since the starting date
 const songIndex = daysPassed % songList.length;
 const songToday = songList[songIndex];
-let songString = 'Music/' + songToday.file;
+let currentSong = songToday;
+let songString = '';
 
 //loads the song into the audio player
-audioFile.src = songString;
-audioFile.parentElement.load();
+loadSong(songToday);
 
 let startTime = 0;
 let endTime = 5;
@@ -206,33 +215,7 @@ audioPlayer.addEventListener('timeupdate', () => {
   
 });
 
-/*
-function setupAudioPlayer(audio, button, progressBar) {
 
-    button.addEventListener("mousedown", () => {
-        if (audio.paused && audio.currentTime + 1 >= endTime) {
-
-            // If the audio has finished playing, reset to start time and play again
-            audio.currentTime = startTime;
-            audio.play();
-            audio.innerHTML = "&#10074;&#10074;";
-            requestAnimationFrame(updateProgress);
-
-        } else if (audio.paused) {
-
-            //console.log(songString);
-            audio.play();
-            audio.innerHTML = "&#10074;&#10074;"; // Change to pause icon
-            requestAnimationFrame(updateProgress);
-
-        } else {
-
-            audio.pause();    
-            button.innerHTML = "&#9654;"; // Change to play icon
-        }
-    });
-}
- */
 
 progressBar.addEventListener('input', () => {
     audioPlayer.currentTime = startTime + parseFloat(progressBar.value);
@@ -247,7 +230,19 @@ for (let i = 0; i < 5; i++) {
 
 const boxes = document.querySelectorAll('.guessBox');
 
+//creates 5 lives for the endless mode 
+for (let i = 0; i < 5; i++) {
+    const life = document.createElement("div");
+    life.className = "heart";
+    life.innerHTML = '❤️';
+
+    guessTracker.appendChild(life);
+}
+
+const lives = document.querySelectorAll('.heart');
+
 loadGameState();
+loadNormal();
 
 //creates the dropdown list of songs in alphabetical order
 songList.sort((a, b) => a.name.localeCompare(b.name));
@@ -269,19 +264,42 @@ helpButton.addEventListener("click", () => {
 });
 
 inputBox.addEventListener('keydown', (event) => {
-
-    if (correctToggle) {
+    
+    if (correctToggle && mode == 0 || guessCount == 5 && mode == 0 || lives == 0 && mode == 1) {
         return; // if the correct songle is already guessed, stop taking more guesses
     }
 
-    if (event.key === 'Enter' && inputBox.value.toLowerCase() === songToday.name.toLowerCase() && focusIndex == -1) {
+    if (event.key === 'Enter' && inputBox.value.toLowerCase() === currentSong.name.toLowerCase() && focusIndex == -1) {
         console.log("Correct song entered!");
-        correctToggle = true;
-        boxes[guessCount].style.backgroundColor = "#68c168"; // Change to green
-        songContainer.classList.remove("active");
-        printResults();
+        if (mode == 0) {
+            correctToggle = true;
+            boxes[guessCount].style.backgroundColor = "#68c168"; // Change to green
+            printResults();
+        } else if (mode == 1) {
+            currentStreak++;
+            if (currentStreak>maxStreak) {
+                maxStreak = currentStreak;
+            }
+
+            const right = document.createElement("div");
+
+            right.className = "endlessGuess";
+            right.textContent = inputBox.value;
+            right.style.backgroundColor = "#68c168";
+
+            endlessList.prepend(right);
+
+            inputBox.value = "";
+            dayCounter.textContent = "Highest Streak: " + maxStreak;
+            scoreCounter.textContent = "Current Streak: " + currentStreak;
+
+            loadRandomSong();
+        }
+        
         saveGameState();
-    } else if (event.key === 'Enter' && inputBox.value.toLowerCase() !== songToday.name.toLowerCase() && focusIndex == -1) {
+        songContainer.classList.remove("active");
+        
+    } else if (event.key === 'Enter' && inputBox.value.toLowerCase() !== currentSong.name.toLowerCase() && focusIndex == -1) {
 
         const songExists = songList.some(song => song.name.toLowerCase() === inputBox.value.toLowerCase());
 
@@ -291,14 +309,47 @@ inputBox.addEventListener('keydown', (event) => {
         }
 
         console.log("Incorrect song entered.");
-        inputBox.value = ""; //clear input
         displaySongs(songList);
-        boxes[guessCount].style.backgroundColor = "#d44c4c"; // Change to red
-        if (guessCount === 4) {
-            printResults();
-        } else {
+
+        if (mode == 0){
+            boxes[guessCount].style.backgroundColor = "#d44c4c"; // Change to red
+            
+            if (guessCount === 4) {
+                printResults();
+            }
             guessCount++;
+
+        } else if (mode == 1) {
+            lives[livesLeft-1].style.opacity = 0;
+            livesLeft--;
+
+            //add result to the endlessList 
+            const wrong = document.createElement("div");
+            wrong.className = "endlessGuess";
+            wrong.style.backgroundColor = "#d44c4c";
+
+            const guess = document.createElement("div");
+            guess.textContent = inputBox.value;
+            guess.style.color = "#431919";
+
+            const answer = document.createElement("div");
+            answer.textContent = currentSong.name;
+            answer.style.color = "white";
+
+            wrong.appendChild(guess);
+            wrong.appendChild(answer);
+
+            endlessList.prepend(wrong);
+
+            if(livesLeft == 0) {
+                restartButton.style.display = "flex";
+            } else {
+                loadRandomSong();
+            }
         }
+
+        inputBox.value = ""; //clear input
+
         setGuessTime();
         saveGameState();
     } 
@@ -441,31 +492,37 @@ function setGuessTime() {
     //console.log(`Song length: ${songLength.toFixed(2)} seconds.`);
 };
 
-function toggleResults() {
-    resultContainer.classList.toggle("active");
-}
-
 function saveGameState(){
     localStorage.setItem("guessCount", guessCount);
     localStorage.setItem("correctToggle", correctToggle);
     localStorage.setItem("date", dateString);
+    localStorage.setItem("streak", maxStreak)
 }
 
 function loadGameState() {
-    if (localStorage.getItem("date") !== dateString) {
-        guessCount = 0;
-        correctToggle = false;
-        return;
+    if (mode == 0){
+        if (localStorage.getItem("date") !== dateString) {
+            guessCount = 0;
+            correctToggle = false;
+            return;
+        }
+
+        for (let i = 0; i < guessCount; i++) {
+            boxes[i].style.backgroundColor = "#d44c4c";
+        }
+
+        if (correctToggle) {
+            boxes[guessCount].style.backgroundColor = "#68c168";
+            printResults();
+        }
+
+        if (guessCount == 5) {
+            resultsButton.style.display = "flex";
+        }
+    } else if (mode == 1) {
+        
     }
 
-    for (let i = 0; i < guessCount; i++) {
-        boxes[i].style.backgroundColor = "#d44c4c";
-    }
-
-    if (correctToggle) {
-        boxes[guessCount].style.backgroundColor = "#68c168";
-        printResults();
-    }
 }
 
 function printResults() {
@@ -493,3 +550,106 @@ function reset() {
     location.reload();
 }
 
+function switchMode() {
+    //console.log(endlessButton.textContent);
+
+    if (endlessButton.textContent == 'Endless Mode') {
+        mode = 1;
+
+        loadEndless();``
+
+        endlessButton.classList.add("normal");
+        body.classList.add("endlessMode");
+        endlessButton.textContent = 'Normal Mode';
+    } else {
+        mode = 0;
+
+        loadNormal();
+
+        endlessButton.classList.remove("normal");
+        body.classList.remove("endlessMode");
+        endlessButton.textContent = 'Endless Mode';
+    }
+}
+
+function loadEndless(){
+
+    boxes.forEach(box => {
+        box.style.display = "none";
+    });
+
+    lives.forEach(life => {
+        life.style.display = "block";
+    });
+
+    endlessList.style.display = "block"
+
+    restartButton.style.display = "none";
+    resultsButton.style.display = "none";
+
+    dayCounter.textContent = "Highest Streak: " + maxStreak;
+    scoreCounter.textContent = "Current Streak: " + currentStreak;
+
+    loadRandomSong();
+
+    helpButton.style.display = "none"; //temp
+}
+
+function loadNormal() {
+
+    helpButton.style.display = "block"; //temp, need to add an info for endless
+
+    boxes.forEach(box => {
+        box.style.display = "block";
+    });
+
+    lives.forEach(life => {
+        life.style.display = "none";
+    });
+
+    endlessList.style.display = "none"
+    restartButton.style.display = "none";
+
+    if (correctToggle){
+        resultsButton.style.display = "block";
+    };
+
+    
+
+    dayCounter.textContent = "Day " + (daysPassed + 1) + " - " + dateString;
+    scoreCounter.textContent = '';
+    loadSong(songToday);
+
+    loadGameState();
+}
+
+function loadRandomSong(){
+     //load a random song into audio player
+    let randomIndex = Math.floor(Math.random() * songList.length);
+    
+    //TODO: make it so you cant get a song twice in one run. Store gotten indexs into an array, if gotten already, reroll
+
+    console.log(Number(randomIndex));
+
+    loadSong(songList[randomIndex]);
+
+}
+
+
+function loadSong(song) {
+    currentSong = song;
+
+    songString = 'Music/' + song.file;
+    audioFile.src = songString;
+    audioFile.parentElement.load();
+}
+
+function restartEndless() {
+    endlessList.innerHTML = "";
+    currentStreak = 0;
+    livesLeft = 5;
+
+    lives.forEach(life => {
+        life.style.opacity = 1;
+    });
+}
