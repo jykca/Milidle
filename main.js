@@ -448,9 +448,16 @@ function toggleResults() {
 function saveGameState(){
     localStorage.setItem("guessCount", guessCount);
     localStorage.setItem("correctToggle", correctToggle);
+    localStorage.setItem("date", dateString);
 }
 
 function loadGameState() {
+    if (localStorage.getItem("date") !== dateString) {
+        guessCount = 0;
+        correctToggle = false;
+        return;
+    }
+
     for (let i = 0; i < guessCount; i++) {
         boxes[i].style.backgroundColor = "#d44c4c";
     }
