@@ -190,17 +190,17 @@ let endTime = 5;
 let songLength = 0;
 
 audioPlayer.addEventListener('loadedmetadata', () => {
-    console.log("Metadata loaded!");
-    console.log("Duration:", audioFile.duration);
-
     songLength = audioPlayer.duration;
 
     audioPlayer.currentTime = startTime;
     progressBar.value = 0;
 
-    playButton.innerHTML = "&#9654;";
+    console.log("Metadata loaded!");
+    console.log("Loaded:", currentSong.name);
+    console.log("File:", songString);
+    console.log("Duration:", audioPlayer.duration);
 
-    console.log("songLength:", songLength);
+    playButton.innerHTML = "&#9654;";
 
     setGuessTime();
 });
@@ -265,7 +265,7 @@ helpButton.addEventListener("click", () => {
 
 
 inputBox.onfocus = () => {
-    console.log(songString);
+    //console.log(songString);
     songContainer.classList.add("active");
     focusIndex = -1;
 }
@@ -277,13 +277,14 @@ inputBox.onblur = () => {
 
 inputBox.addEventListener('keydown', (event) => {
     
-    if (correctToggle && mode == 0 || guessCount == 5 && mode == 0 || lives == 0 && mode == 1) {
+    if (correctToggle && mode == 0 || guessCount == 5 && mode == 0 || livesLeft == 0 && mode == 1) {
         return; // if the correct songle is already guessed, stop taking more guesses
     }
 
     if (event.key === 'Enter' && inputBox.value.toLowerCase() === currentSong.name.toLowerCase() && focusIndex == -1) {
 
         console.log("Correct song entered!");
+        displaySongs(songList);
 
         if (mode == 0) {
             correctToggle = true;
@@ -313,7 +314,6 @@ inputBox.addEventListener('keydown', (event) => {
             loadRandomSong();
         }
         
-        setGuessTime();
         saveGameState();
         songContainer.classList.remove("active");
         
@@ -364,6 +364,8 @@ inputBox.addEventListener('keydown', (event) => {
 
             if(livesLeft == 0) {
                 printResults();
+                restartButton.style.display = "flex";
+                resultsButton.style.display = "flex";
                 endlessOngoing = false;
             } else {
                 loadRandomSong();
@@ -372,7 +374,6 @@ inputBox.addEventListener('keydown', (event) => {
 
         inputBox.value = ""; //clear input
 
-        setGuessTime();
         saveGameState();
     } 
 
@@ -387,7 +388,7 @@ inputBox.addEventListener('keydown', (event) => {
     } else if (event.key === "ArrowUp") {
         songItems[focusIndex].classList.remove('focused');
         focusIndex = (focusIndex - 1 + songItems.length) % songItems.length;
-    } else if (event.key === "Enter") {
+    } else if (event.key === "Enter" && focusIndex >= 0) {
         songItems[focusIndex].classList.remove('focused');
         if (focusIndex >= 0 && focusIndex < songItems.length) {
                 inputBox.value = songItems[focusIndex].textContent;
@@ -396,7 +397,9 @@ inputBox.addEventListener('keydown', (event) => {
     }
 
     //console.log("Focus index:", focusIndex);
-    songItems[focusIndex].classList.add('focused');
+    if (focusIndex >= 0 && focusIndex < songItems.length) {
+        songItems[focusIndex].classList.add('focused');
+    }
 });
 
 document.addEventListener("mousedown", (event) => {
@@ -432,7 +435,6 @@ playButton.addEventListener("mousedown", () => {
 
       } else if (audioPlayer.paused) {
 
-        console.log(songString);
         audioPlayer.play();
         playButton.innerHTML = "&#10074;&#10074;"; // Change to pause icon
         requestAnimationFrame(updateProgress);
@@ -514,8 +516,6 @@ function setGuessTime() {
 
         audioPlayer.currentTime = startTime;
 
-        //console.log(`Guess ${guessCount + 1}: Start time set to ${startTime.toFixed(2)} seconds, End time set to ${endTime.toFixed(2)} seconds.`);
-        //console.log(`Song length: ${songLength.toFixed(2)} seconds.`);
     } else if (mode == 1){
         if (endlessOngoing == false){
 
@@ -556,7 +556,8 @@ function setGuessTime() {
         audioPlayer.currentTime = startTime;
     }
 
-    
+    console.log("Start Time: ", startTime);
+    console.log("End Time: ", endTime);
 };
 
 function saveGameState(){
@@ -599,6 +600,8 @@ function printResults() {
 
     if (mode == 0){
         //console.log(resultsButton);
+
+        reslts.style.display = "block";
 
         reslts.innerHTML = `The correct answer was: <b>${songToday.name}</b>`;
 
@@ -757,7 +760,7 @@ function loadRandomSong(){
     endlessSong = songList[randomIndex];
 
     previousIndexs.push(randomIndex);
-    console.log(Number(randomIndex));
+    //console.log(Number(randomIndex));
     loadSong(songList[randomIndex]);
 }
 
@@ -767,18 +770,24 @@ function loadSong(song) {
 
     songString = 'Music/' + song.file;
     audioFile.src = songString;
-    audioFile.parentElement.load();
+    audioPlayer.load();
 }
 
 function restartEndless() {
     endlessList.innerHTML = "";
     currentStreak = 0;
     livesLeft = 5;
+    endlessSong = null;
+    endlessOngoing = false;
+    previousIndexs = [];
+
     scoreCounter.textContent = "Current Streak: " + currentStreak;
     inputBox.value = "";
 
-    resultContainer.remove("active");
-    resultsButton.remove("active");
+    resultContainer.classList.remove("active");
+
+    resultsButton.style.display = "none";
+    restartButton.style.display = "none";
 
     lives.forEach(life => {
         life.style.opacity = 1;
