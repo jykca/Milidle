@@ -22,6 +22,9 @@ const endlessButton = document.querySelector('.endlessButton');
 const scoreCounter = document.querySelector('.scoreCounter');
 const endlessList = document.querySelector('.endlessList');
 const restartButton = document.querySelector('.restartButton');
+const information = document.querySelector('.information');
+const information1 = document.querySelector('.information1');
+const information2 = document.querySelector('.information2');
 
 
 let guessCount = Number(localStorage.getItem("guessCount")) || 0;
@@ -30,6 +33,8 @@ let focusIndex = -1;
 let maxStreak = Number(localStorage.getItem("streak")) || 0;;
 let currentStreak = 0;
 let livesLeft = 5;
+let endlessOngoing = false;
+let endlessSong = null;
 
 const songList = [
     { name: "Space Colony", file: "space_colony.mp3" },
@@ -190,6 +195,11 @@ audioPlayer.addEventListener('loadedmetadata', () => {
 
     songLength = audioPlayer.duration;
 
+    audioPlayer.currentTime = startTime;
+    progressBar.value = 0;
+
+    playButton.innerHTML = "&#9654;";
+
     console.log("songLength:", songLength);
 
     setGuessTime();
@@ -249,19 +259,21 @@ songList.sort((a, b) => a.name.localeCompare(b.name));
 
 displaySongs(songList);
 
+helpButton.addEventListener("click", () => {
+    helpContainer.classList.toggle("active");
+});
+
+
 inputBox.onfocus = () => {
     console.log(songString);
     songContainer.classList.add("active");
+    focusIndex = -1;
 }
 
 inputBox.onblur = () => {
     songContainer.classList.remove("active");
     focusIndex = -1;
 }
-
-helpButton.addEventListener("click", () => {
-    helpContainer.classList.toggle("active");
-});
 
 inputBox.addEventListener('keydown', (event) => {
     
@@ -270,11 +282,14 @@ inputBox.addEventListener('keydown', (event) => {
     }
 
     if (event.key === 'Enter' && inputBox.value.toLowerCase() === currentSong.name.toLowerCase() && focusIndex == -1) {
+
         console.log("Correct song entered!");
+
         if (mode == 0) {
             correctToggle = true;
             boxes[guessCount].style.backgroundColor = "#68c168"; // Change to green
             printResults();
+
         } else if (mode == 1) {
             currentStreak++;
             if (currentStreak>maxStreak) {
@@ -283,7 +298,7 @@ inputBox.addEventListener('keydown', (event) => {
 
             const right = document.createElement("div");
 
-            right.className = "endlessGuess";
+            right.className = "endlessGuess right";
             right.textContent = inputBox.value;
             right.style.backgroundColor = "#68c168";
 
@@ -293,14 +308,18 @@ inputBox.addEventListener('keydown', (event) => {
             dayCounter.textContent = "Highest Streak: " + maxStreak;
             scoreCounter.textContent = "Current Streak: " + currentStreak;
 
+            endlessOngoing = true;
+
             loadRandomSong();
         }
         
+        setGuessTime();
         saveGameState();
         songContainer.classList.remove("active");
         
     } else if (event.key === 'Enter' && inputBox.value.toLowerCase() !== currentSong.name.toLowerCase() && focusIndex == -1) {
 
+        //checks if the guess is a real guess
         const songExists = songList.some(song => song.name.toLowerCase() === inputBox.value.toLowerCase());
 
         if (songExists === false) {
@@ -325,7 +344,7 @@ inputBox.addEventListener('keydown', (event) => {
 
             //add result to the endlessList 
             const wrong = document.createElement("div");
-            wrong.className = "endlessGuess";
+            wrong.className = "endlessGuess wrong";
             wrong.style.backgroundColor = "#d44c4c";
 
             const guess = document.createElement("div");
@@ -341,8 +360,11 @@ inputBox.addEventListener('keydown', (event) => {
 
             endlessList.prepend(wrong);
 
+            endlessOngoing = true;
+
             if(livesLeft == 0) {
-                restartButton.style.display = "flex";
+                printResults();
+                endlessOngoing = false;
             } else {
                 loadRandomSong();
             }
@@ -388,7 +410,7 @@ document.addEventListener("mousedown", (event) => {
 });
 
 shareButton.addEventListener("click", () => {
-    let shareMessageAndLink = shareMessage.textContent + "\nhttps://jykca.github.io/";
+    let shareMessageAndLink = shareMessage.innerText + "\nhttps://jykca.github.io/";
     copyTextToClipboard(shareMessageAndLink);
 });
 
@@ -467,29 +489,74 @@ function copyTextToClipboard(text) {
     }
 }
 
-function setGuessTime() {
+let endlessStartTime = 0;
+let endlessEndTime = 0;
 
-    if (guessCount === 0) {
-        startTime = 0.2 * songLength;
-        endTime = startTime + 5;
-    } else if (guessCount === 1) {
-        startTime = 0.4 * songLength;
-        endTime = startTime + 5;
-    } else if (guessCount === 2) {
-        startTime = 0.6 * songLength;
-        endTime = startTime + 5;
-    } else if (guessCount === 3) {
-        startTime = 0.8 * songLength;
-        endTime = startTime + 5;
-    } else if (guessCount === 4) {
-        startTime = 0;
-        endTime = songLength;
-        progressBar.max = songLength;
+function setGuessTime() {
+    if (mode == 0) {
+        if (guessCount === 0) {
+            startTime = 0.2 * songLength;
+            endTime = startTime + 5;
+        } else if (guessCount === 1) {
+            startTime = 0.4 * songLength;
+            endTime = startTime + 5;
+        } else if (guessCount === 2) {
+            startTime = 0.6 * songLength;
+            endTime = startTime + 5;
+        } else if (guessCount === 3) {
+            startTime = 0.8 * songLength;
+            endTime = startTime + 5;
+        } else if (guessCount === 4) {
+            startTime = 0;
+            endTime = songLength;
+            progressBar.max = songLength;
+        }
+
+        audioPlayer.currentTime = startTime;
+
+        //console.log(`Guess ${guessCount + 1}: Start time set to ${startTime.toFixed(2)} seconds, End time set to ${endTime.toFixed(2)} seconds.`);
+        //console.log(`Song length: ${songLength.toFixed(2)} seconds.`);
+    } else if (mode == 1){
+        if (endlessOngoing == false){
+
+            let snippitLength = 0;
+
+            if (currentStreak <= 5) {
+                snippitLength = 15;
+                
+            } else if (currentStreak <= 10) {
+                snippitLength = 10;
+
+            } else if (currentStreak <= 20) {
+                snippitLength = 5;
+
+            } else if (currentStreak <= 100) {
+                snippitLength = 3;
+
+            } else if (currentStreak <= 200) {
+                snippitLength = 1;
+            } 
+
+            progressBar.max = snippitLength;
+
+            let randomStartPoint = Math.floor(Math.random() * (songLength-snippitLength-20)); //avoids the first 10s/last10s, also ensures the startPoint wont overflow
+
+            startTime = randomStartPoint + 10;
+            endTime = startTime + snippitLength;
+
+            //for restoring purposes
+            endlessStartTime = startTime;
+            endlessEndTime = endTime;
+
+        } else {
+            startTime = endlessStartTime;
+            endTime = endlessEndTime;
+        }
+        
+        audioPlayer.currentTime = startTime;
     }
 
-    audioPlayer.currentTime = startTime;
-    //console.log(`Guess ${guessCount + 1}: Start time set to ${startTime.toFixed(2)} seconds, End time set to ${endTime.toFixed(2)} seconds.`);
-    //console.log(`Song length: ${songLength.toFixed(2)} seconds.`);
+    
 };
 
 function saveGameState(){
@@ -520,29 +587,59 @@ function loadGameState() {
             resultsButton.style.display = "flex";
         }
     } else if (mode == 1) {
+        //TODO: load current game
         
     }
-
 }
 
 function printResults() {
+
     resultContainer.classList.add("active");
-    //console.log(resultsButton);
-    resultsButton.classList.add("active");
+    resultsButton.style.display = "flex";
 
-    
+    if (mode == 0){
+        //console.log(resultsButton);
 
-    reslts.innerHTML = `The correct answer was: <b>${songToday.name}</b>`;
+        reslts.innerHTML = `The correct answer was: <b>${songToday.name}</b>`;
 
-    if (correctToggle) {
-        if (guessCount === 0) {
-            shareMessage.innerHTML = `I guessed today's Mili song in 1 guess!`;
-        } else if (guessCount > 0) {
-            shareMessage.innerHTML = `I guessed today's Mili song in ${guessCount + 1} guesses!`;
+        if (correctToggle) {
+            if (guessCount === 0) {
+                shareMessage.innerHTML = `I guessed today's Mili song in 1 guess!`;
+            } else if (guessCount > 0) {
+                shareMessage.innerHTML = `I guessed today's Mili song in ${guessCount + 1} guesses!`;
+            }
+        } else {
+            shareMessage.textContent = `I couldn't guess today's Mili song...`;
         }
-    } else {
-        shareMessage.textContent = `I couldn't guess today's Mili song...`;
+    } else if (mode == 1){
+
+        reslts.style.display = "none";
+
+        restartButton.style.display = "flex";
+
+        if (currentStreak == 0) {
+            shareMessage.innerHTML = `I didnt get any Mili songs in endless mode...<br>`;
+        } else if (currentStreak == 1) {
+            shareMessage.innerHTML = `I guessed 1 Mili song in endless mode!<br>`;
+        } else if (currentStreak > 1) {
+            shareMessage.innerHTML = `I guessed ${currentStreak} Mili songs in endless mode!<br>`;
+        }
+
+        endlessList.querySelectorAll('.endlessGuess').forEach(item => {
+    
+            if (item.classList.contains("right")) {
+                shareMessage.innerHTML += `<br>✅ ${item.textContent}`;
+            }
+
+            else if (item.classList.contains("wrong")) {
+                const guess = item.children[0].textContent;
+                const answer = item.children[1].textContent;
+
+                shareMessage.innerHTML += `<br>❌ ${guess} → ${answer}`;
+            }
+        });
     }
+    
 }
 
 function reset() {
@@ -556,7 +653,7 @@ function switchMode() {
     if (endlessButton.textContent == 'Endless Mode') {
         mode = 1;
 
-        loadEndless();``
+        loadEndless();
 
         endlessButton.classList.add("normal");
         body.classList.add("endlessMode");
@@ -582,22 +679,36 @@ function loadEndless(){
         life.style.display = "block";
     });
 
+    inputBox.value = "";
+
     endlessList.style.display = "block"
 
-    restartButton.style.display = "none";
-    resultsButton.style.display = "none";
+    if (livesLeft !== 0) {
+        restartButton.style.display = "none";
+        resultsButton.style.display = "none";
+    } else {
+        restartButton.style.display = "flex";
+        resultsButton.style.display = "flex";
+    }
 
     dayCounter.textContent = "Highest Streak: " + maxStreak;
     scoreCounter.textContent = "Current Streak: " + currentStreak;
 
-    loadRandomSong();
+    helpButton.style.backgroundColor = "#74c0c9";
+    information.textContent = "How To Play Endless"
+    information1.textContent = "Get as many Mili Songs with 5 lives!";
+    information2.innerHTML = "  You can listen to the song by pressing the play button. <br><br>Your guess has to be an existing song.  <br>As you get more score, the length of the song snippit will decrease.<br><br><br><br><br>";
 
-    helpButton.style.display = "none"; //temp
+    if (endlessSong == null) {
+        endlessOngoing = false;
+        loadRandomSong();
+    } else {
+        endlessOngoing = true;
+        loadSong(endlessSong);
+    }
 }
 
 function loadNormal() {
-
-    helpButton.style.display = "block"; //temp, need to add an info for endless
 
     boxes.forEach(box => {
         box.style.display = "block";
@@ -612,27 +723,42 @@ function loadNormal() {
 
     if (correctToggle){
         resultsButton.style.display = "block";
+    } else {
+        resultsButton.style.display = "none";
     };
-
-    
 
     dayCounter.textContent = "Day " + (daysPassed + 1) + " - " + dateString;
     scoreCounter.textContent = '';
     loadSong(songToday);
 
+    helpButton.style.backgroundColor = "lightblue";
+    information.textContent = "How To Play"
+    information1.textContent = "Guess the Mili song within 5 tries! ";
+    information2.innerHTML = "You can listen to the song by pressing the play button. <br><br>Your guess has to be an existing song.  <br><br>AWAAWA songs, and some songs before Mili are also included. <br><br>Instrumental songs (Ender Lillies & Ender Magnolia soundtracks) are mostly excluded";
+
     loadGameState();
 }
 
+let previousIndexs = [];
+
 function loadRandomSong(){
      //load a random song into audio player
+    if (previousIndexs.length === songList.length) {
+        previousIndexs = []; //TODO: add smth cool for getting all the songs!!
+    }
+
     let randomIndex = Math.floor(Math.random() * songList.length);
     
-    //TODO: make it so you cant get a song twice in one run. Store gotten indexs into an array, if gotten already, reroll
+    while (previousIndexs.indexOf(randomIndex) !== -1){
+        randomIndex = Math.floor(Math.random() * songList.length);
+    }
 
+    //store the last song in endless
+    endlessSong = songList[randomIndex];
+
+    previousIndexs.push(randomIndex);
     console.log(Number(randomIndex));
-
     loadSong(songList[randomIndex]);
-
 }
 
 
@@ -648,8 +774,15 @@ function restartEndless() {
     endlessList.innerHTML = "";
     currentStreak = 0;
     livesLeft = 5;
+    scoreCounter.textContent = "Current Streak: " + currentStreak;
+    inputBox.value = "";
+
+    resultContainer.remove("active");
+    resultsButton.remove("active");
 
     lives.forEach(life => {
         life.style.opacity = 1;
     });
+
+    loadRandomSong();
 }

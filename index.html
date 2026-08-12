@@ -46,7 +46,7 @@
         align-items: center;
         justify-content: center;
         gap: 20px;
-        margin: 20px auto;
+        margin: 10px auto;
       }
 
       .titleContainer {
@@ -59,7 +59,7 @@
         height: 30px;
         position: absolute;
         left: calc(100% + 30px);
-        top: 50%;
+        top: 67.67%;
         transform: translateY(-100%);
         border: 2px solid white;
         border-radius: 50%;
@@ -82,6 +82,12 @@
         max-width: 50px;
         margin: 20px auto;
         font-family: sans-serif;
+      }
+
+      .dayCounter,
+      .scoreCounter {
+          position: relative;
+          top: -15px;
       }
 
       .boxHeader {
@@ -171,6 +177,8 @@
         background-color: #229ba8;
         color: white;
         cursor: pointer;
+        transform: translateY(-6.7px);
+        z-index: 67;
       }
 
       .playButton:hover {
@@ -213,6 +221,8 @@
         display: flex;
         pointer-events: none;
         transition: all 0.3s ease;
+        
+        z-index: 676767;
       }
 
       .helpContainer.active {
@@ -221,7 +231,7 @@
         transition: all 0.3s ease;
       }
 
-      .information {
+      .information, .information1, .information2 {
         width: 300px;
         text-align: center;
       }
@@ -292,6 +302,8 @@
         display: flex;
         pointer-events: none;
         transition: all 0.3s ease;
+
+        z-index: 6767;
       }
 
       .resultContainer.active {
@@ -330,10 +342,6 @@
         color: white;
         cursor: pointer;
         display: none;
-      }
-
-      .resultsButton.active {
-        display: flex;
       }
 
       .resultsButton:hover {
@@ -466,16 +474,14 @@
 
       <div class="titleContainer">
         <h1>Guess the Mili Song</h1>
-        <p class="dayCounter"></p>
-        <p class="scoreCounter"></p>
 
         <button class="helpButton">?</button>
 
         <!-- info -->
         <div class="helpContainer">
           <h2 class="information">How To Play</h2>
-          <h3 class="information">Guess the Mili song within 5 tries! </h3>
-          <p class="information">
+          <h3 class="information1">Guess the Mili song within 5 tries! </h3>
+          <p class="information2">
             You can listen to the song by pressing the play button. <br><br>
             Your guess has to be an existing song.  <br><br>
             AWAAWA songs, and some songs before Mili are also included. <br><br>
@@ -490,6 +496,9 @@
         </div>
       </div>
     </div>
+
+    <p class="dayCounter"></p>
+    <p class="scoreCounter"></p>
 
     <!-- audio start/pause button -->
     <div class="audioContainer">
@@ -553,8 +562,10 @@
       
 
       <p class="shareMessage"></p>
-
       <button class="shareButton">Share</button>
+
+      <!-- for endless -->
+      <div class="restartButton" onclick="restartEndless()">Restart</div>
     </div>
 
 
@@ -566,8 +577,6 @@
      <div>
       <button class="endlessButton" onclick="switchMode()">Endless Mode</button>
      </div>
-
-     <div class="restartButton" onclick="restartEndless()">Restart</div>
 
      <div class="endlessList"></div>
 
