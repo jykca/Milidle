@@ -33,7 +33,7 @@ let focusIndex = -1;
 let maxStreak = Number(localStorage.getItem("streak")) || 0;;
 let currentStreak = 0;
 let livesLeft = 5;
-let endlessOngoing = false;
+let newEndlessSong = false;
 let endlessSong = null;
 
 const songList = [
@@ -199,6 +199,7 @@ audioPlayer.addEventListener('loadedmetadata', () => {
     console.log("Loaded:", currentSong.name);
     console.log("File:", songString);
     console.log("Duration:", audioPlayer.duration);
+    console.log("New song?", newEndlessSong);
 
     playButton.innerHTML = "&#9654;";
 
@@ -309,8 +310,6 @@ inputBox.addEventListener('keydown', (event) => {
             dayCounter.textContent = "Highest Streak: " + maxStreak;
             scoreCounter.textContent = "Current Streak: " + currentStreak;
 
-            endlessOngoing = true;
-
             loadRandomSong();
         }
         
@@ -360,13 +359,10 @@ inputBox.addEventListener('keydown', (event) => {
 
             endlessList.prepend(wrong);
 
-            endlessOngoing = true;
-
             if(livesLeft == 0) {
                 printResults();
                 restartButton.style.display = "flex";
                 resultsButton.style.display = "flex";
-                endlessOngoing = false;
             } else {
                 loadRandomSong();
             }
@@ -517,7 +513,7 @@ function setGuessTime() {
         audioPlayer.currentTime = startTime;
 
     } else if (mode == 1){
-        if (endlessOngoing == false){
+        if (newEndlessSong){
 
             let snippitLength = 0;
 
@@ -547,6 +543,8 @@ function setGuessTime() {
             //for restoring purposes
             endlessStartTime = startTime;
             endlessEndTime = endTime;
+
+            newEndlessSong = false
 
         } else {
             startTime = endlessStartTime;
@@ -703,10 +701,11 @@ function loadEndless(){
     information2.innerHTML = "  You can listen to the song by pressing the play button. <br><br>Your guess has to be an existing song.  <br>As you get more score, the length of the song snippit will decrease.<br><br><br><br><br>";
 
     if (endlessSong == null) {
-        endlessOngoing = false;
+
         loadRandomSong();
+
     } else {
-        endlessOngoing = true;
+        newEndlessSong = false;
         loadSong(endlessSong);
     }
 }
@@ -759,6 +758,8 @@ function loadRandomSong(){
     //store the last song in endless
     endlessSong = songList[randomIndex];
 
+    newEndlessSong = true;
+
     previousIndexs.push(randomIndex);
     //console.log(Number(randomIndex));
     loadSong(songList[randomIndex]);
@@ -778,7 +779,6 @@ function restartEndless() {
     currentStreak = 0;
     livesLeft = 5;
     endlessSong = null;
-    endlessOngoing = false;
     previousIndexs = [];
 
     scoreCounter.textContent = "Current Streak: " + currentStreak;
