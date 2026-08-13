@@ -37,7 +37,7 @@ let newEndlessSong = false;
 let endlessSong = null;
 
 const songList = [
-    { name: "String Theocracy)", file: "string_theocracy.mp3"},
+    { name: "String Theocracy", file: "string_theocracy.mp3"},
     { name: "Summoning 101 (Key Ingredient Ver.)", file: "summoning_101_key_ingredient.mp3" },
     { name: "Children of the City", file: "children_of_the_city.mp3" },
     { name: "Dancing Ghost's Ball Jointed Darling", file: "dancing_ghosts_ball_jointed_darling.mp3" },
