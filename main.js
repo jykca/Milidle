@@ -119,7 +119,7 @@ const songList = [
     { name: "War of Shame", file: "war_of_shame.mp3" },
     { name: "Victim", file: "victim.mp3" },
     { name: "Birthday Kid (Key Ingredient Ver.)", file: "birthday_kid_key_ingredient.mp3" },
-    // { name: "Origin", file: "PLACEHOLDER" },
+    { name: "Origin", file: "origin.mp3" },
     { name: "Mitsubachi", file: "mitsubachi.mp3" },
     { name: "Between Two Worlds", file: "between_two_worlds.mp3" },
     { name: "Lemonade", file: "lemonade.mp3" },
