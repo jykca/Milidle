@@ -58,7 +58,7 @@
         width: 30px;
         height: 30px;
         position: absolute;
-        left: calc(100% + 30px);
+        left: calc(100% + 25px);
         top: 67.67%;
         transform: translateY(-100%);
         border: 2px solid white;
@@ -73,7 +73,7 @@
       }
 
       .helpButton:hover {
-        background-color: rgb(140, 177, 190);
+        background-color: rgb(140, 177, 190) !important;
       }
 
       .interactiveBox {
@@ -462,6 +462,126 @@
         transition: all 0.3s ease;
       }
 
+      .configButton {
+        width: 30px;
+        height: 30px;
+        position: absolute;
+        left: -50px;
+        top: 67.67%;
+        transform: translateY(-100%);
+        border: 2px solid white;
+        border-radius: 50%;
+
+        background-color: lightblue;
+        color: white;
+
+        font-size: 15px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .configButton:hover {
+        background-color: rgb(140, 177, 190);
+      }
+
+      .configContainer {
+        width: 400px;
+        height: 500px;
+
+        position: fixed;
+
+        top: 30%;
+        left: 50%;
+        transform: translate(-50%, -50%); 
+
+        border-radius: 10px;
+        flex-direction: column;
+        justify-content: flex-start;
+
+        margin-top: 10px;
+        background-color: #229ba8;
+
+        opacity: 0;
+        display: flex;
+        pointer-events: none;
+        transition: all 0.3s ease;
+        
+        z-index: 676767;
+      }
+
+      .configContainer.active {
+        pointer-events: auto;
+        opacity: 0.9;
+        transition: all 0.3s ease;
+      }
+
+      .toggles {
+        width: 300px;
+        margin-left: 50px;
+        margin-top: 20px;
+        margin-bottom: 0px;
+
+        display: flex;
+        align-items: center;
+
+        color: white;
+      }
+
+      .desc {
+        width: 300px;
+        margin-left: 50px;
+
+        font-size: 12px;
+
+        display: flex;
+        align-items: center;
+
+        color: white;
+      }
+
+      .switch {
+        margin-left: auto;
+
+        position: relative;
+        display: inline-block;
+        width: 45px;
+        height: 25px;
+      }
+
+      /* The background */
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+
+        background-color: #3db8c5;
+        border-radius: 25px;
+        border: 2px solid #2a5953;
+      }
+
+      .slider::before {
+        content: "";
+
+        position: absolute;
+        width: 17.5px;
+        height: 17.5px;
+
+        left: 1.5px;
+        top: 1.8px;
+
+        background-color: white;
+        border-radius: 50%;
+
+      }
+
+      .switch input:checked + .slider {
+        background-color: #229ba8;
+      }
+
+      .switch input:checked + .slider::before {
+        transform: translateX(19.5px);
+      }
+
     </style>
 
     <meta charset="UTF-8">
@@ -476,6 +596,34 @@
         <h1>Guess the Mili Song</h1>
 
         <button class="helpButton">?</button>
+        <button class="configButton">&#9881;</button>
+
+        <!-- settings (for endless) -->
+        <div class="configContainer">
+          <h2>Settings</h2>
+          <h3>Endless Mode</h3>
+          <div class="toggles">Number of Lives</div>
+          
+          <div class="toggles">Full Ender Lilies/Magnolia OST
+
+            <label class="switch">
+              <input type="checkbox" id="ostToggle">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class = "desc">Adds 78 OST Songs to the Endless Pool</div>
+
+          <div class="toggles">EVERYTHING I CAN FIND!!
+            <label class="switch">
+              <input type="checkbox" id="everythingToggle">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class = "desc">WIP, does nothing atm.</div>
+
+          <p><br>Clicking these will reset your current run.</p>
+        
+        </div>
 
         <!-- info -->
         <div class="helpContainer">

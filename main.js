@@ -14,6 +14,8 @@ const resultsButton = document.querySelector('.resultsButton');
 const reslts = document.querySelector('.reslts');
 const helpContainer = document.querySelector('.helpContainer');
 const helpButton = document.querySelector('.helpButton');
+const configContainer = document.querySelector('.configContainer');
+const configButton = document.querySelector('.configButton');
 //const resultsBar = document.querySelector('.resultsBar');
 //const resultsPlayButton = document.querySelector('.resultsPlayButton');
 const torinoImage = document.querySelector('.torino');
@@ -25,7 +27,8 @@ const restartButton = document.querySelector('.restartButton');
 const information = document.querySelector('.information');
 const information1 = document.querySelector('.information1');
 const information2 = document.querySelector('.information2');
-
+const ostToggle = document.querySelector('#ostToggle');
+const everythingToggle = document.querySelector('#everythingToggle');
 
 let guessCount = Number(localStorage.getItem("guessCount")) || 0;
 let correctToggle = localStorage.getItem("correctToggle") === "true";
@@ -35,151 +38,9 @@ let currentStreak = 0;
 let livesLeft = 5;
 let newEndlessSong = false;
 let endlessSong = null;
-
-const songList = [
-    { name: "String Theocracy", file: "string_theocracy.mp3"},
-    { name: "Summoning 101 (Key Ingredient Ver.)", file: "summoning_101_key_ingredient.mp3" },
-    { name: "Children of the City", file: "children_of_the_city.mp3" },
-    { name: "Dancing Ghost's Ball Jointed Darling", file: "dancing_ghosts_ball_jointed_darling.mp3" },
-    { name: "Iron Lotus", file: "iron_lotus.mp3" },
-    { name: "sustain++;", file: "sustain_plus_plus.mp3" },
-    { name: "Main theme (Ender Lilies)", file: "main_theme.mp3" },
-    { name: "To Your Oblivion", file: "to_your_oblivion.mp3" },
-    { name: "Fly, My Wings", file: "fly_my_wings.mp3" },
-    { name: "What the Ripple Sees", file: "what_the_ripple_sees.mp3" },
-    { name: "Lullaby for salvation", file: "lullaby_for_salvation.mp3" },
-    { name: "Rosetta", file: "rosetta.mp3" },
-    { name: "Flowerworks", file: "flowerworks.mp3" },
-    { name: "Nine Point Eight", file: "nine_point_eight.mp3" },
-    { name: "Sacramentum: Unaccompanied Hymn for Torino", file: "sacramentum_unaccompanied_hymn_for_torino.mp3" },
-    { name: "Rubber Human (Key Ingredient Ver.)", file: "rubber_human_key_ingredient.mp3" },
-    { name: "Gluttony", file: "gluttony.mp3" },
-   // { name: "Amusement Park", file: "" },
-    { name: "TIE HUA FEI", file: "tie_hua_fei.mp3" },
-    { name: "Skin-Deep Comedy", file: "skin_deep_comedy.mp3" },
-    { name: "Mortal with You", file: "mortal_with_you.mp3" },
-    { name: "world.search(you);", file: "world_search_you.mp3" },
-    { name: "Unidentified Flavourful Object", file: "unidentified_flavourful_object.mp3" },
-    { name: "Vitamins", file: "vitamins.mp3" },
-    { name: "String Theocracy (Key Ingredient Ver.)", file: "string_theocracy_key_ingredient.mp3" },
-    { name: "world.execute(me);", file: "world_execute_me.mp3" },
-    { name: "Ame to Taieki to Nioi", file: "ame_to_taieki_to_nioi.mp3" },
-    { name: "Ocean Bby", file: "ocean_bby.mp3" },
-    { name: "Colorful", file: "colorful.mp3" },
-    { name: "Mushrooms", file: "mushrooms.mp3" },
-    { name: "Extension of You", file: "extension_of_you.mp3" },
-    { name: "Vulnerability", file: "vulnerability.mp3" },
-    { name: "Static", file: "static.mp3" },
-    { name: "RTRT (Key Ingredient Ver.)", file: "rtrt_key_ingredient.mp3" },
-    { name: "TIAN TIAN", file: "tian_tian.mp3" },
-    { name: "Opium", file: "opium.mp3" },
-    { name: "Camelia", file: "camelia.mp3" },
-    { name: "Cast Me a Spell", file: "cast_me_a_spell.mp3" },
-    { name: "From a Place of Love (Key Ingredient Ver.)", file: "from_a_place_of_love_key_ingredient.mp3" },
-    { name: "1000x1000", file: "1000x1000.mp3" },
-    { name: "And Then is Heard No More", file: "and_then_is_heard_no_more.mp3" },
-    { name: "Every Other Ghost", file: "every_other_ghost.mp3" },
-    { name: "Past the Stargazing Season", file: "past_the_stargazing_season.mp3" },
-    { name: "Fossil", file: "fossil.mp3" },
-    { name: "Red Dahlia", file: "red_dahlia.mp3" },
-    { name: "Within", file: "within.mp3" },
-    { name: "Witch's Invitation", file: "witchs_invitation.mp3" },
-    { name: "Paper Bouquet", file: "paper_bouquet.mp3" },
-    { name: "Maroma Samsa", file: "maroma_samsa.mp3" },
-    { name: "Shitty Flowers", file: "shitty_flowers.mp3" },
-    { name: "Let the Maggots Sing", file: "let_the_maggots_sing.mp3" },
-   // { name: "Still Alive", file: "" },
-    { name: "Sideshow Duckling", file: "sideshow_duckling.mp3" },
-    { name: "Utopiosphere", file: "utopiosphere.mp3" },
-    { name: "Dandelion Girls, Dandelion Boys", file: "dandelion_girls_dandelion_boys.mp3" },
-    { name: "Ephemeral", file: "ephemeral.mp3" },
-    { name: "Entertainment", file: "entertainment.mp3" },
-    { name: "Excalibur", file: "excalibur.mp3" },
-    { name: "Gertrauda", file: "gertrauda.mp3" },
-    { name: "Whiteout", file: "whiteout.mp3" },
-    { name: "Hero", file: "hero.mp3" },
-    { name: "Classroom Dreamer", file: "classroom_dreamer.mp3" },
-    { name: "A Turtle's Heart", file: "a_turtles_heart.mp3" },
-    { name: "In Hell We Live, Lament", file: "in_hell_we_live_lament.mp3" },
-    { name: "Milk", file: "milk.mp3" },
-    { name: "DK", file: "dk.mp3" },
-    { name: "Monsters in the Woods", file: "monsters_in_the_woods.mp3" },
-    { name: "Chocological (Key Ingredient Ver.)", file: "chocological_key_ingredient.mp3" },
-    { name: "Ga1ahad and Scientific Witchery", file: "ga1ahad_and_scientific_witchery.mp3" },
-    { name: "Holy and Darkness 1", file: "holy_and_darkness_1.mp3" },
-    // { name: "Between Two Worlds (Let's Lament)", file: "between_two_worlds_lets_lament.mp3" },
-    { name: "GIVE ME RICE", file: "give_me_rice.mp3" },
-    { name: "Life We Sow", file: "life_we_sow.mp3" },
-    { name: "Friction", file: "friction.mp3" },
-    { name: "Bento Box Bivouac", file: "bento_box_bivouac.mp3" },
-    { name: "Petrolea", file: "petrolea.mp3" },
-    { name: "Sleep Talk Metropolis", file: "sleep_talk_metropolis.mp3" },
-    { name: "Not My Paradiso", file: "not_my_paradiso.mp3" },
-    { name: "world.execute(me); (Key Ingredient Ver.)", file: "world_execute_me_key_ingredient.mp3" },
-    { name: "War of Shame", file: "war_of_shame.mp3" },
-    { name: "Victim", file: "victim.mp3" },
-    { name: "Birthday Kid (Key Ingredient Ver.)", file: "birthday_kid_key_ingredient.mp3" },
-    { name: "Origin", file: "origin.mp3" },
-    { name: "Mitsubachi", file: "mitsubachi.mp3" },
-    { name: "Between Two Worlds", file: "between_two_worlds.mp3" },
-    { name: "Lemonade", file: "lemonade.mp3" },
-    { name: "I Am a Fluff", file: "i_am_a_fluff.mp3" }, //fix audio
-    { name: "A Turtle's Heart (Key Ingredient ver.)", file: "a_turtles_heart_key_ingredient.mp3" },
-    { name: "My Creator", file: "my_creator.mp3" },
-    { name: "Sloth", file: "sloth.mp3" },
-    { name: "Birthday Kid", file: "birthday_kid.mp3" },
-    { name: "Rightfully", file: "rightfully.mp3" },
-    { name: "Salt, Pepper, Birds, and the Thought Police", file: "salt_pepper_birds_and_the_thought_police.mp3" },
-    { name: "Chocological", file: "chocological.mp3" },
-    { name: "Sl0t", file: "sl0t.mp3" },
-    { name: "Phantomcat of Meowloween", file: "phantomcat_of_meowloween.mp3" },
-    { name: "With a Billion Worldful of <3", file: "with_a_billion_worldful_of_heart.mp3" },
-    // { name: "WHAT ROBOTS NEED", file: "what_robots_need.mp3" },
-    { name: "TOKYO NEON (Key Ingredient Ver.)", file: "tokyo_neon_key_ingredient.mp3" },
-   // { name: "TOTO Washlet", file: "" },
-    { name: "Fushicho", file: "fushicho.mp3" },
-    { name: "Poems of a Machine", file: "poems_of_a_machine.mp3" },
-    { name: "Gone Angels", file: "gone_angels.mp3" },
-    { name: "Lemonade (Key Ingredient Ver.)", file: "lemonade_key_ingredient.mp3" },
-    // { name: "f", file: "kapuras_theme.mp3" },
-//  { name: "It's a wonderful world", file: "PLACEHOLDER" },
-    { name: "Fable", file: "fable.mp3" },
-    { name: "SAIKAI", file: "saikai.mp3" },
-    { name: "Process", file: "process.mp3" },
-    { name: "Ikutoshitsuki", file: "ikutoshitsuki.mp3" },
-    { name: "Boys in Kaleidosphere", file: "boys_in_kaleidosphere.mp3" },
-    { name: "Painful Death for the Lactose Intolerant", file: "painful_death_for_the_lactose_intolerant.mp3" },
-    { name: "Mirror Mirror", file: "mirror_mirror.mp3" },
-    { name: "From a Place of Love", file: "from_a_place_of_love.mp3" },
-    // { name: "In Hell We Live, Lament (Let's Lament)", file: "in_hell_we_live_lament_lets_lament.mp3" },
-    { name: "Iron Lotus (Key Ingredient Ver.)", file: "iron_lotus_key_ingredient.mp3" },
-    { name: "Through Patches of Violet", file: "through_patches_of_violet.mp3" },
-    { name: "TOKYO NEON", file: "tokyo_neon.mp3" },
-    { name: "RTRT", file: "rtrt.mp3" },
-    { name: "Imagined Flight", file: "imagined_flight.mp3" },
-    { name: "Grown-up's Paradise", file: "grown_ups_paradise.mp3" },
-    { name: "MEN I LOVE", file: "men_i_love.mp3" },
-    { name: "Bathtub Mermaid", file: "bathtub_mermaid.mp3" },
-    { name: "Rubber Human", file: "rubber_human.mp3" },
-    { name: "Summoning 101", file: "summoning_101.mp3" },
-    { name: "HUA YU", file: "hua_yu.mp3" },
-    { name: "YUBIKIRI-GENMAN", file: "yubikiri_genman.mp3" }, //broken?
-    { name: "Duetting Solo", file: "duetting_solo.mp3" },
-    { name: "Komm Süsser Tod", file: "komm_susser_tod.mp3" },
-    { name: "Bulbel", file: "bulbel.mp3" },
-    { name: "Year N", file: "year_n.mp3" },
-    { name: "Though Our Paths May Diverge", file: "though_our_paths_may_diverge.mp3" },
-    { name: "-NENTEN-", file: "nenten.mp3" },
-    { name: "Space Colony", file: "space_colony.mp3" },
-    { name: "Gunners in the Rain", file: "gunners_in_the_rain.mp3" },
-    { name: "Peach Pit and Cyanide", file: "peach_pit_and_cyanide.mp3" },
-    { name: "Until Our Sky Is Blue", file: "until_our_sky_is_blue.mp3" },
-    { name: "Meatball Submarine", file: "meatball_submarine.mp3" },
-    { name: "Cerebrite", file: "cerebrite.mp3" },
-    { name: "Compass", file: "compass.mp3" }
-];
-
 let mode = 0; //0 = normal mode, 1 = endless, more to come?
+let ost = localStorage.getItem("ost") === "true";
+let everything = localStorage.getItem("everything") === "true";
 
 //get current date and time
 const startingDate = new Date("2026-8-12");
@@ -188,18 +49,82 @@ const dateString = currentDate.toLocaleDateString();
 
 let daysPassed = Math.floor((currentDate - startingDate) / (1000 * 60 * 60 * 24));
 
-//picks a song based on the number of days passed since the starting date
-const songIndex = daysPassed % songList.length;
-const songToday = songList[songIndex];
-let currentSong = songToday;
+let songToday;
+let currentSong;
 let songString = '';
 
-//loads the song into the audio player
-loadSong(songToday);
-
+//global variables for changing the progress bar
 let startTime = 0;
 let endTime = 5;
 let songLength = 0;
+
+let songList = [];
+let normalList = [];
+let ostList = [];
+let nicheList = [];
+let displayList = [];
+
+Promise.all([
+    fetch("normalSongs.txt").then(response => response.text()),
+    fetch("ostSongs.txt").then(response => response.text()),
+    fetch("nicheSongs.txt").then(response => response.text())
+]).then(([normalData, ostData, nicheData]) => {
+
+    normalList = parseSongs(normalData);
+    ostList = parseSongs(ostData);
+    nicheList = parseSongs(nicheData);
+
+    songList = [...normalList];
+
+    ostToggle.checked = ost;
+    if (ost) {
+        addList(ostList);
+    }
+
+    everythingToggle.checked = everything;
+    if (everything) {
+        addList(nicheList);
+    }
+
+    // pick today's song using only normal
+    const songIndex = daysPassed % normalList.length;
+    songToday = normalList[songIndex];
+    currentSong = songToday;
+
+    loadSong(songToday);
+
+    // sort dropdown
+    songList = [...songList].sort((a, b) =>
+        a.name.localeCompare(b.name)
+    );
+
+    displaySongs(songList);
+
+    loadGameState();
+    loadNormal();
+});
+
+ostToggle.addEventListener('change', () => {
+    console.log("OST toggle:", ostToggle.checked);
+    localStorage.setItem("ost", ostToggle.checked);
+
+    if (ostToggle.checked == true){
+        addList(ostList);
+    } else {
+        removeList(ostList);
+    }
+});
+
+everythingToggle.addEventListener('change', () => {
+    console.log("Everything toggle:", everythingToggle.checked);
+    localStorage.setItem("everything", everythingToggle.checked);
+
+    if (everythingToggle.checked == true){
+        addList(nicheList);
+    } else {
+        removeList(nicheList);
+    }
+});
 
 audioPlayer.addEventListener('loadedmetadata', () => {
     songLength = audioPlayer.duration;
@@ -208,7 +133,7 @@ audioPlayer.addEventListener('loadedmetadata', () => {
 
     audioPlayer.currentTime = startTime;
     progressBar.value = 0;
-
+    
     console.log("Metadata loaded!");
     console.log("Loaded:", currentSong.name);
     console.log("File:", songString);
@@ -224,6 +149,7 @@ volumeBar.addEventListener('input', () => {
     audioPlayer.volume = volumeBar.value; 
 });
 
+//source of image
 torinoImage.addEventListener("click", () => {
     window.open("https://x.com/july_sp_/status/1666155624068153344", "_blank");
 });
@@ -261,16 +187,13 @@ for (let i = 0; i < 5; i++) {
 
 const lives = document.querySelectorAll('.heart');
 
-loadGameState();
-loadNormal();
-
-//creates the dropdown list of songs in alphabetical order
-songList.sort((a, b) => a.name.localeCompare(b.name));
-
-displaySongs(songList);
-
+//top buttons
 helpButton.addEventListener("click", () => {
     helpContainer.classList.toggle("active");
+});
+
+configButton.addEventListener("click", () => {
+    configContainer.classList.toggle("active");
 });
 
 
@@ -288,7 +211,7 @@ inputBox.onblur = () => {
 inputBox.addEventListener('keydown', (event) => {
     
     if (correctToggle && mode == 0 || guessCount == 5 && mode == 0 || livesLeft == 0 && mode == 1) {
-        return; // if the correct songle is already guessed, stop taking more guesses
+        return; // if the correct song is already guessed, stop taking more guesses
     }
 
     if (event.key === 'Enter' && inputBox.value.toLowerCase() === currentSong.name.toLowerCase() && focusIndex == -1) {
@@ -408,17 +331,20 @@ inputBox.addEventListener('keydown', (event) => {
 });
 
 document.addEventListener("mousedown", (event) => {
-    //clicking outside hides the result container
+    //clicking outside hides the container
     if (resultContainer.classList.contains("active") && !resultContainer.contains(event.target)) {
         resultContainer.classList.remove("active");
     }
     if (helpContainer.classList.contains("active") && !helpContainer.contains(event.target)) {
         helpContainer.classList.remove("active");
     }
+    if (configContainer.classList.contains("active") && !configContainer.contains(event.target)) {
+        configContainer.classList.remove("active");
+    }
 });
 
 shareButton.addEventListener("click", () => {
-    let shareMessageAndLink = shareMessage.innerText + "\nhttps://jykca.github.io/";
+    let shareMessageAndLink = dateString + " - " + shareMessage.innerText + "\nhttps://jykca.github.io/";
     copyTextToClipboard(shareMessageAndLink);
 });
 
@@ -568,8 +494,10 @@ function setGuessTime() {
         audioPlayer.currentTime = startTime;
     }
 
+
     console.log("Start Time: ", startTime);
     console.log("End Time: ", endTime);
+
 };
 
 function saveGameState(){
@@ -710,6 +638,7 @@ function loadEndless(){
     scoreCounter.textContent = "Current Streak: " + currentStreak;
 
     helpButton.style.backgroundColor = "#74c0c9";
+    configButton.style.backgroundColor = "#74c0c9";
     information.textContent = "How To Play Endless"
     information1.textContent = "Get as many Mili Songs with 5 lives!";
     information2.innerHTML = "  You can listen to the song by pressing the play button. <br><br>Your guess has to be an existing song.  <br>As you get more score, the length of the song snippit will decrease.<br><br><br><br><br>";
@@ -748,6 +677,8 @@ function loadNormal() {
     loadSong(songToday);
 
     helpButton.style.backgroundColor = "lightblue";
+    configButton.style.backgroundColor = "lightblue";
+
     information.textContent = "How To Play"
     information1.textContent = "Guess the Mili song within 5 tries! ";
     information2.innerHTML = "You can listen to the song by pressing the play button. <br><br>Your guess has to be an existing song.  <br><br>AWAAWA songs, and some songs before Mili are also included. <br><br>Instrumental songs (Ender Lillies & Ender Magnolia soundtracks) are mostly excluded";
@@ -809,3 +740,33 @@ function restartEndless() {
 
     loadRandomSong();
 }
+
+function addList(songArray){
+    songList.push(...songArray)
+    console.log(songList.length); 
+    if (mode == 1){
+        restartEndless();
+    }
+}
+
+function removeList(songArray){
+    songList = songList.filter(song => !songArray.some(extra => extra.name === song.name));
+    if (mode == 1){
+        restartEndless();
+    }
+}
+
+function parseSongs(data) {
+        return data
+            .split("\n")
+            .map(line => line.trim())
+            .filter(line => line !== "")
+            .map(line => {
+                const [name, file] = line.split("|");
+
+                return {
+                    name: name.trim(),
+                    file: file.trim()
+                };
+            });
+    }
