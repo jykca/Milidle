@@ -7,7 +7,6 @@ sustain++;| sustain_plus_plus.mp3
 To Your Oblivion| to_your_oblivion.mp3
 Fly, My Wings| fly_my_wings.mp3
 What the Ripple Sees| what_the_ripple_sees.mp3
-Lullaby for salvation| lullaby_for_salvation.mp3
 Rosetta| rosetta.mp3
 Flowerworks| flowerworks.mp3
 Nine Point Eight| nine_point_eight.mp3
@@ -58,7 +57,7 @@ Whiteout| whiteout.mp3
 Hero| hero.mp3
 Classroom Dreamer| classroom_dreamer.mp3
 A Turtle's Heart| a_turtles_heart.mp3
-In Hell We Live| Lament| in_hell_we_live_lament.mp3
+In Hell We Live, Lament| in_hell_we_live_lament.mp3
 Milk| milk.mp3
 DK| dk.mp3
 Monsters in the Woods| monsters_in_the_woods.mp3

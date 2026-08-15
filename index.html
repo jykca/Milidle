@@ -515,7 +515,7 @@
         transition: all 0.3s ease;
       }
 
-      .toggles {
+      .toggles, .choice {
         width: 300px;
         margin-left: 50px;
         margin-top: 20px;
@@ -582,6 +582,27 @@
         transform: translateX(19.5px);
       }
 
+      .livesButton {
+        margin-left: auto;
+
+        position: relative;
+        display: inline-block;
+        width: 25px;
+        height: 25px;
+        
+
+        background-color: #3db8c5;
+        color: white;
+
+        border-radius: 5px;
+        border: 2px solid #2a5953;
+        cursor: pointer;
+      }
+
+      .livesButton.active {
+        background-color: #229ba8;
+      }
+
     </style>
 
     <meta charset="UTF-8">
@@ -602,7 +623,9 @@
         <div class="configContainer">
           <h2>Settings</h2>
           <h3>Endless Mode</h3>
-          <div class="toggles">Number of Lives</div>
+          <div class="choice">Number of Lives
+            
+          </div>
           
           <div class="toggles">Full Ender Lilies/Magnolia OST
 

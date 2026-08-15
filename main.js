@@ -16,8 +16,6 @@ const helpContainer = document.querySelector('.helpContainer');
 const helpButton = document.querySelector('.helpButton');
 const configContainer = document.querySelector('.configContainer');
 const configButton = document.querySelector('.configButton');
-//const resultsBar = document.querySelector('.resultsBar');
-//const resultsPlayButton = document.querySelector('.resultsPlayButton');
 const torinoImage = document.querySelector('.torino');
 const body = document.querySelector('body');
 const endlessButton = document.querySelector('.endlessButton');
@@ -29,6 +27,8 @@ const information1 = document.querySelector('.information1');
 const information2 = document.querySelector('.information2');
 const ostToggle = document.querySelector('#ostToggle');
 const everythingToggle = document.querySelector('#everythingToggle');
+const choice = document.querySelector('.choice');
+
 
 let guessCount = Number(localStorage.getItem("guessCount")) || 0;
 let correctToggle = localStorage.getItem("correctToggle") === "true";
@@ -41,6 +41,7 @@ let endlessSong = null;
 let mode = 0; //0 = normal mode, 1 = endless, more to come?
 let ost = localStorage.getItem("ost") === "true";
 let everything = localStorage.getItem("everything") === "true";
+let startingLives = Number(localStorage.getItem("startingLives")) || 5;
 
 //get current date and time
 const startingDate = new Date("2026-8-12");
@@ -186,6 +187,36 @@ for (let i = 0; i < 5; i++) {
 }
 
 const lives = document.querySelectorAll('.heart');
+
+
+for (let i = 0; i < 5; i++) {
+    const liveButton = document.createElement("button");
+    liveButton.className = "livesButton";
+    liveButton.innerHTML = i+1 ;
+
+    if (startingLives == liveButton.innerText) {
+        liveButton.classList.toggle("active");
+    }
+
+    choice.appendChild(liveButton);
+}
+
+const liveButtons = document.querySelectorAll('.livesButton');
+
+
+liveButtons.forEach(button => {
+    button.addEventListener("click", () => {
+        liveButtons.forEach(btn => btn.classList.remove("active"));
+        button.classList.toggle("active");
+        startingLives = Number(button.innerText);
+        localStorage.setItem("startingLives", startingLives);
+        if (mode == 1) {
+            loadEndless();
+            restartEndless();
+        }
+    });
+});
+
 
 //top buttons
 helpButton.addEventListener("click", () => {
@@ -344,7 +375,13 @@ document.addEventListener("mousedown", (event) => {
 });
 
 shareButton.addEventListener("click", () => {
-    let shareMessageAndLink = dateString + " - " + shareMessage.innerText + "\nhttps://jykca.github.io/";
+    let shareMessageAndLink = "";
+    if (mode == 0){
+        shareMessageAndLink = dateString + " - " + shareMessage.innerText + "\nhttps://jykca.github.io/";
+    } else if (mode == 1) {
+        shareMessageAndLink = shareMessage.innerText + "\nhttps://jykca.github.io/";
+    }
+    
     copyTextToClipboard(shareMessageAndLink);
 });
 
@@ -568,17 +605,26 @@ function printResults() {
             shareMessage.innerHTML = `I guessed ${currentStreak} Mili songs in endless mode!<br>`;
         }
 
-        endlessList.querySelectorAll('.endlessGuess').forEach(item => {
+        let counter = 0;
+
+        const items = Array.from(endlessList.querySelectorAll('.endlessGuess')).reverse();
     
+        items.forEach(item => {
+
             if (item.classList.contains("right")) {
                 shareMessage.innerHTML += `<br>✅ ${item.textContent}`;
             }
-
             else if (item.classList.contains("wrong")) {
                 const guess = item.children[0].textContent;
                 const answer = item.children[1].textContent;
 
-                shareMessage.innerHTML += `<br>❌ ${guess} → ${answer}`;
+                counter++;
+                if (counter == startingLives){
+                    shareMessage.innerHTML += `<br>💀 ${guess} → ${answer}`;
+                } else {
+                    shareMessage.innerHTML += `<br>❌ ${guess} → ${answer}`;
+                }
+                
             }
         });
     }
@@ -614,12 +660,20 @@ function switchMode() {
 
 function loadEndless(){
 
+    livesLeft = startingLives;
+
     boxes.forEach(box => {
         box.style.display = "none";
     });
 
+    let counter = 0;
+
     lives.forEach(life => {
-        life.style.display = "block";
+        life.style.display = "none";
+        counter++;
+        if (counter <= startingLives){
+            life.style.display = "block";
+        }
     });
 
     inputBox.value = "";
@@ -722,7 +776,7 @@ function loadSong(song) {
 function restartEndless() {
     endlessList.innerHTML = "";
     currentStreak = 0;
-    livesLeft = 5;
+    livesLeft = startingLives;
     endlessSong = null;
     previousIndexs = [];
 
@@ -734,8 +788,13 @@ function restartEndless() {
     resultsButton.style.display = "none";
     restartButton.style.display = "none";
 
+    let counter = 0;
+
     lives.forEach(life => {
-        life.style.opacity = 1;
+        counter++
+        if (counter <= startingLives){
+            life.style.opacity = 1;
+        }
     });
 
     loadRandomSong();
