@@ -66,9 +66,9 @@ let nicheList = [];
 let displayList = [];
 
 Promise.all([
-    fetch("normalSongs.txt").then(response => response.text()),
-    fetch("ostSongs.txt").then(response => response.text()),
-    fetch("nicheSongs.txt").then(response => response.text())
+    fetch("songLists/normalSongs.txt").then(response => response.text()),
+    fetch("songLists/ostSongs.txt").then(response => response.text()),
+    fetch("songLists/nicheSongs.txt").then(response => response.text())
 ]).then(([normalData, ostData, nicheData]) => {
 
     normalList = parseSongs(normalData);
@@ -134,12 +134,16 @@ audioPlayer.addEventListener('loadedmetadata', () => {
 
     audioPlayer.currentTime = startTime;
     progressBar.value = 0;
-    
+
+    /*debugging
+
     console.log("Metadata loaded!");
     console.log("Loaded:", currentSong.name);
     console.log("File:", songString);
     console.log("Duration:", audioPlayer.duration);
     console.log("New song?", newEndlessSong);
+
+    */
 
     playButton.innerHTML = "&#9654;";
 });
@@ -377,9 +381,9 @@ document.addEventListener("mousedown", (event) => {
 shareButton.addEventListener("click", () => {
     let shareMessageAndLink = "";
     if (mode == 0){
-        shareMessageAndLink = dateString + " - " + shareMessage.innerText + "\nhttps://jykca.github.io/";
+        shareMessageAndLink = "Day #" + (daysPassed + 1) + " - " + shareMessage.innerText + "\nhttps://milidle.vercel.app/";
     } else if (mode == 1) {
-        shareMessageAndLink = shareMessage.innerText + "\nhttps://jykca.github.io/";
+        shareMessageAndLink = shareMessage.innerText + "\nhttps://milidle.vercel.app/";
     }
     
     copyTextToClipboard(shareMessageAndLink);
@@ -532,8 +536,8 @@ function setGuessTime() {
     }
 
 
-    console.log("Start Time: ", startTime);
-    console.log("End Time: ", endTime);
+    //console.log("Start Time: ", startTime);
+    //console.log("End Time: ", endTime);
 
 };
 
@@ -694,8 +698,8 @@ function loadEndless(){
     helpButton.style.backgroundColor = "#74c0c9";
     configButton.style.backgroundColor = "#74c0c9";
     information.textContent = "How To Play Endless"
-    information1.textContent = "Get as many Mili Songs with 5 lives!";
-    information2.innerHTML = "  You can listen to the song by pressing the play button. <br><br>Your guess has to be an existing song.  <br>As you get more score, the length of the song snippit will decrease.<br><br><br><br><br>";
+    information1.textContent = "Get as many Mili Songs as you can!";
+    information2.innerHTML = "  You can listen to the song by pressing the play button. <br><br>Your guess has to be an existing song.  <br><br>As you get more score, the length of the song snippit will decrease.<br><br>Click the gear icon in the top left for customization settings.<br>";
 
     if (endlessSong == null) {
 
@@ -802,7 +806,7 @@ function restartEndless() {
 
 function addList(songArray){
     songList.push(...songArray)
-    console.log(songList.length); 
+    //console.log(songList.length); 
     if (mode == 1){
         restartEndless();
     }
