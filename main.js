@@ -768,7 +768,7 @@ function loadRandomSong(){
 function loadSong(song) {
     currentSong = song;
 
-    songString = 'Music/' + song.file;
+    songString = 'https://pub-8e84e65d1165460e8d46caac325947e4.r2.dev/' + song.file;
     audioFile.src = songString;
     audioPlayer.load();
 }
