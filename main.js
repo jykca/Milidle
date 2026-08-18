@@ -230,6 +230,7 @@ liveButtons.forEach(button => {
 //top buttons
 helpButton.addEventListener("click", () => {
     helpContainer.classList.toggle("active");
+    console.log("clicked");
 });
 
 configButton.addEventListener("click", () => {
@@ -377,7 +378,7 @@ inputBox.addEventListener('keydown', (event) => {
     }
 });
 
-document.addEventListener("click", (event) => {
+document.addEventListener("mousedown", (event) => {
     //clicking outside hides the container
     if (resultContainer.classList.contains("active") && !resultContainer.contains(event.target)) {
         resultContainer.classList.remove("active");
