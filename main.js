@@ -42,6 +42,7 @@ let mode = 0; //0 = normal mode, 1 = endless, more to come?
 let ost = localStorage.getItem("ost") === "true";
 let everything = localStorage.getItem("everything") === "true";
 let startingLives = Number(localStorage.getItem("startingLives")) || 5;
+let dev = false;
 
 //get current date and time
 const startingDate = new Date("2026-8-12");
@@ -132,25 +133,13 @@ audioPlayer.addEventListener('loadedmetadata', () => {
 
     setGuessTime();
 
-
+    audioPlayer.pause();
     progressBar.value = 0;
 
-    /* debugging
-    console.log("Metadata loaded!");
-    console.log("Loaded:", currentSong.name);
-    console.log("File:", songString);
-    console.log("Duration:", audioPlayer.duration);
-    console.log("New song?", newEndlessSong);
-    console.log("Lives Left:", livesLeft);
-    */
+    
+
 
     playButton.innerHTML = "&#9654;";
-});
-
-audioPlayer.play().catch(error => {
-    if (error.name !== "AbortError") {
-        console.error("Audio play error:", error);
-    }
 });
 
 //volume bar
@@ -171,6 +160,8 @@ audioPlayer.addEventListener('timeupdate', () => {
     audioPlayer.currentTime = endTime;
     playButton.innerHTML = "&#9654;";
   } 
+
+  //progressBar.value = audioPlayer.currentTime - startTime;
 });
 
 progressBar.addEventListener('input', () => {
@@ -549,9 +540,16 @@ function setGuessTime() {
         audioPlayer.currentTime = startTime;
     }
 
-
-    //console.log("Start Time: ", startTime);
-    //console.log("End Time: ", endTime);
+    if (dev == true){
+    console.log("Start Time: ", startTime);
+    console.log("End Time: ", endTime);
+    console.log("Metadata loaded!");
+    console.log("Loaded:", currentSong.name);
+    console.log("File:", songString);
+    console.log("Duration:", audioPlayer.duration);
+    //console.log("New song?", newEndlessSong);
+    //console.log("Lives Left:", livesLeft);
+    }
 
 };
 
@@ -786,6 +784,9 @@ function loadRandomSong(){
 function loadSong(song) {
     currentSong = song;
 
+    audioPlayer.pause();
+    audioPlayer.currentTime = 0;
+
     songString = 'https://pub-8e84e65d1165460e8d46caac325947e4.r2.dev/' + song.file;
     audioFile.src = songString;
     audioPlayer.load();
@@ -847,3 +848,15 @@ function parseSongs(data) {
                 };
             });
     }
+
+function debug(){
+    dev = !dev;
+}
+
+function skip(){
+    if (mode == 1){
+        loadRandomSong();
+        console.log("Skipped song!");
+        return;
+    }
+}
