@@ -135,12 +135,14 @@ audioPlayer.addEventListener('loadedmetadata', () => {
 
     progressBar.value = 0;
 
+    /* debugging
     console.log("Metadata loaded!");
     console.log("Loaded:", currentSong.name);
     console.log("File:", songString);
     console.log("Duration:", audioPlayer.duration);
     console.log("New song?", newEndlessSong);
     console.log("Lives Left:", livesLeft);
+    */
 
     playButton.innerHTML = "&#9654;";
 });
