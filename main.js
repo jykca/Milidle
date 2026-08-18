@@ -303,9 +303,14 @@ inputBox.addEventListener('keydown', (event) => {
             setGuessTime();
 
         } else if (mode == 1) {
-            lives[livesLeft-1].style.opacity = 0;
-            livesLeft--;
 
+            if (!dev){
+                lives[livesLeft-1].style.opacity = 0;
+                livesLeft--;
+            }  else {
+                currentStreak++;
+            }
+            
             //add result to the endlessList 
             const wrong = document.createElement("div");
             wrong.className = "endlessGuess wrong";
@@ -847,10 +852,26 @@ function parseSongs(data) {
                     file: file.trim()
                 };
             });
-    }
+}
 
 function debug(){
     dev = !dev;
+    
+    audioPlayer.addEventListener('seeking', () => {
+        console.log("Seeking:", audioPlayer.currentTime);
+    });
+
+    audioPlayer.addEventListener('seeked', () => {
+        console.log("Seeked:", audioPlayer.currentTime);
+    });
+
+    audioPlayer.addEventListener('playing', () => {
+        console.log("Played:", audioPlayer.currentTime);
+    });
+
+    audioPlayer.addEventListener('waiting', () => {
+        console.log("Waiting:", audioPlayer.currentTime);
+    });
 }
 
 function skip(){
