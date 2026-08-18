@@ -136,7 +136,7 @@ everythingToggle.addEventListener('change', () => {
     }
 });
 
-audioPlayer.addEventListener('loadedmetadata', () => {
+audioPlayer.addEventListener('loadeddata', () => {
     songLength = audioPlayer.duration;
 
     setGuessTime();
@@ -414,7 +414,7 @@ playButton.addEventListener("mousedown", () => {
         return;
     }
 
-    if (audioPlayer.paused && audioPlayer.currentTime + 1 >= endTime) {
+    if (audioPlayer.paused && audioPlayer.currentTime >= endTime - 0.05) {
 
         // If the audio has finished playing, reset to start time and play again
         seekAudioTo(startTime, true);
