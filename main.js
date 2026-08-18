@@ -132,20 +132,23 @@ audioPlayer.addEventListener('loadedmetadata', () => {
 
     setGuessTime();
 
-    audioPlayer.currentTime = startTime;
-    progressBar.value = 0;
 
-    /*debugging
+    progressBar.value = 0;
 
     console.log("Metadata loaded!");
     console.log("Loaded:", currentSong.name);
     console.log("File:", songString);
     console.log("Duration:", audioPlayer.duration);
     console.log("New song?", newEndlessSong);
-
-    */
+    console.log("Lives Left:", livesLeft);
 
     playButton.innerHTML = "&#9654;";
+});
+
+audioPlayer.play().catch(error => {
+    if (error.name !== "AbortError") {
+        console.error("Audio play error:", error);
+    }
 });
 
 //volume bar
@@ -303,8 +306,8 @@ inputBox.addEventListener('keydown', (event) => {
                 printResults();
             }
 
-            setGuessTime();
             guessCount++;
+            setGuessTime();
 
         } else if (mode == 1) {
             lives[livesLeft-1].style.opacity = 0;
@@ -471,24 +474,24 @@ function setGuessTime() {
     if (mode == 0) {
         if (guessCount === 0) {
             startTime = 0.2 * songLength;
-            endTime = startTime + 5;
-            progressBar.max = 5;
+            endTime = startTime + 2;
+            progressBar.max = 2;
         } else if (guessCount === 1) {
             startTime = 0.4 * songLength;
-            endTime = startTime + 5;
-            progressBar.max = 5;
+            endTime = startTime + 3;
+            progressBar.max = 3;
         } else if (guessCount === 2) {
             startTime = 0.6 * songLength;
-            endTime = startTime + 5;
-            progressBar.max = 5;
+            endTime = startTime + 4;
+            progressBar.max = 4;
         } else if (guessCount === 3) {
             startTime = 0.8 * songLength;
             endTime = startTime + 5;
             progressBar.max = 5;
-        } else if (guessCount === 4) {
-            startTime = 0;
-            endTime = songLength;
-            progressBar.max = songLength;
+        } else if (guessCount === 4 || guessCount === 5) {
+            startTime = 0.5 * songLength;
+            endTime = startTime + 10;
+            progressBar.max = 10;
         }
 
         audioPlayer.currentTime = startTime;
@@ -499,10 +502,10 @@ function setGuessTime() {
             let snippitLength = 0;
 
             if (currentStreak <= 5) {
-                snippitLength = 15;
+                snippitLength = 10;
                 
             } else if (currentStreak <= 10) {
-                snippitLength = 10;
+                snippitLength = 7;
 
             } else if (currentStreak <= 20) {
                 snippitLength = 5;
@@ -557,6 +560,8 @@ function loadGameState() {
             correctToggle = false;
             return;
         }
+
+        setGuessTime();
 
         for (let i = 0; i < guessCount; i++) {
             boxes[i].style.backgroundColor = "#d44c4c";
@@ -665,8 +670,6 @@ function switchMode() {
 }
 
 function loadEndless(){
-
-    livesLeft = startingLives;
 
     boxes.forEach(box => {
         box.style.display = "none";
