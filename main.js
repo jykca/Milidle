@@ -408,15 +408,22 @@ playButton.addEventListener("mousedown", () => {
 
         // If the audio has finished playing, reset to start time and play again
         audioPlayer.currentTime = startTime;
-        audioPlayer.play();
-        playButton.innerHTML = "&#10074;&#10074;";
-        requestAnimationFrame(updateProgress);
+
+        audioPlayer.play().then(() => {
+            playButton.innerHTML = "&#10074;&#10074;";
+            requestAnimationFrame(updateProgress);
+        }).catch(error => {
+            console.error("Error:", error);
+        });
 
       } else if (audioPlayer.paused) {
 
-        audioPlayer.play();
-        playButton.innerHTML = "&#10074;&#10074;"; // Change to pause icon
-        requestAnimationFrame(updateProgress);
+        audioPlayer.play().then(() => {
+            playButton.innerHTML = "&#10074;&#10074;";
+            requestAnimationFrame(updateProgress);
+        }).catch(error => {
+            console.error("Error:", error);
+        });
 
     } else {
 
