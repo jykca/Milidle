@@ -29,6 +29,17 @@ const ostToggle = document.querySelector('#ostToggle');
 const everythingToggle = document.querySelector('#everythingToggle');
 const choice = document.querySelector('.choice');
 
+audioPlayer.preload = 'auto';
+
+audioPlayer.addEventListener('waiting', () => {
+    if (!audioPlayer.paused) {
+        playButton.innerHTML = "&#9203;";
+    }
+});
+
+audioPlayer.addEventListener('playing', () => {
+    playButton.innerHTML = "&#10074;&#10074;";
+});
 
 let guessCount = Number(localStorage.getItem("guessCount")) || 0;
 let correctToggle = localStorage.getItem("correctToggle") === "true";
@@ -136,9 +147,6 @@ audioPlayer.addEventListener('loadedmetadata', () => {
     audioPlayer.pause();
     progressBar.value = 0;
 
-    
-
-
     playButton.innerHTML = "&#9654;";
 });
 
@@ -165,7 +173,8 @@ audioPlayer.addEventListener('timeupdate', () => {
 });
 
 progressBar.addEventListener('input', () => {
-    audioPlayer.currentTime = startTime + parseFloat(progressBar.value);
+    const targetTime = startTime + parseFloat(progressBar.value);
+    seekAudioTo(targetTime, !audioPlayer.paused);
 });
 
 //creates 5 boxes for the guess tracker
@@ -403,23 +412,11 @@ playButton.addEventListener("mousedown", () => {
       if (audioPlayer.paused && audioPlayer.currentTime + 1 >= endTime) {
 
         // If the audio has finished playing, reset to start time and play again
-        audioPlayer.currentTime = startTime;
-
-        audioPlayer.play().then(() => {
-            playButton.innerHTML = "&#10074;&#10074;";
-            requestAnimationFrame(updateProgress);
-        }).catch(error => {
-            console.error("Error:", error);
-        });
+        seekAudioTo(startTime, true);
 
       } else if (audioPlayer.paused) {
 
-        audioPlayer.play().then(() => {
-            playButton.innerHTML = "&#10074;&#10074;";
-            requestAnimationFrame(updateProgress);
-        }).catch(error => {
-            console.error("Error:", error);
-        });
+        seekAudioTo(audioPlayer.currentTime, true);
 
     } else {
 
@@ -879,5 +876,33 @@ function skip(){
         loadRandomSong();
         console.log("Skipped song!");
         return;
+    }
+}
+
+function seekAudioTo(targetTime, shouldPlay = false) {
+    const maxTime = Number.isFinite(audioPlayer.duration) ? audioPlayer.duration : targetTime;
+    const safeTarget = Math.min(Math.max(targetTime, 0), maxTime);
+
+    const applySeek = () => {
+        audioPlayer.pause();
+        audioPlayer.currentTime = safeTarget;
+
+        if (shouldPlay) {
+            audioPlayer.play().then(() => {
+                playButton.innerHTML = "&#10074;&#10074;";
+                requestAnimationFrame(updateProgress);
+            }).catch(error => {
+                console.error("Error:", error);
+            });
+        } else {
+            playButton.innerHTML = "&#9654;";
+        }
+    };
+
+    if (audioPlayer.readyState >= 1) {
+        applySeek();
+    } else {
+        audioPlayer.addEventListener('loadedmetadata', applySeek, { once: true });
+        audioPlayer.load();
     }
 }
