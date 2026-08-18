@@ -302,6 +302,8 @@ inputBox.addEventListener('keydown', (event) => {
             if (guessCount === 4) {
                 printResults();
             }
+
+            setGuessTime();
             guessCount++;
 
         } else if (mode == 1) {
@@ -739,7 +741,7 @@ function loadNormal() {
 
     information.textContent = "How To Play"
     information1.textContent = "Guess the Mili song within 5 tries! ";
-    information2.innerHTML = "You can listen to the song by pressing the play button. <br><br>Your guess has to be an existing song.  <br><br>AWAAWA songs, and some songs before Mili are also included. <br><br>Instrumental songs (Ender Lillies & Ender Magnolia soundtracks) are mostly excluded";
+    information2.innerHTML = "You can listen to the song by pressing the play button. <br><br>Your guess has to be an existing song.  <br><br>AWAAWA songs, and some songs related to Mili may also be included. <br><br>Instrumental songs (Ender Lillies & Ender Magnolia soundtracks) are mostly excluded";
 
     loadGameState();
 }
