@@ -475,23 +475,23 @@ let endlessEndTime = 0;
 function setGuessTime() {
     if (mode == 0) {
         if (guessCount === 0) {
-            startTime = 0.2 * songLength;
+            startTime = Math.floor(0.2 * songLength);
             endTime = startTime + 2;
             progressBar.max = 2;
         } else if (guessCount === 1) {
-            startTime = 0.4 * songLength;
+            startTime = Math.floor(0.4 * songLength);
             endTime = startTime + 3;
             progressBar.max = 3;
         } else if (guessCount === 2) {
-            startTime = 0.6 * songLength;
+            startTime = Math.floor(0.6 * songLength);
             endTime = startTime + 4;
             progressBar.max = 4;
         } else if (guessCount === 3) {
-            startTime = 0.8 * songLength;
+            startTime = Math.floor(0.8 * songLength);
             endTime = startTime + 5;
             progressBar.max = 5;
         } else if (guessCount === 4 || guessCount === 5) {
-            startTime = 0.5 * songLength;
+            startTime = Math.floor(0.5 * songLength);
             endTime = startTime + 10;
             progressBar.max = 10;
         }
