@@ -74,6 +74,7 @@ let ostList = [];
 let nicheList = [];
 let displayList = [];
 
+
 Promise.all([
     fetch("songLists/normalSongs.txt").then(response => response.text()),
     fetch("songLists/ostSongs.txt").then(response => response.text()),
@@ -164,7 +165,6 @@ torinoImage.addEventListener("click", () => {
 audioPlayer.addEventListener('timeupdate', () => {
   if (audioPlayer.currentTime >= endTime) {
     audioPlayer.pause();
-    audioPlayer.currentTime = endTime;
     playButton.innerHTML = "&#9654;";
   } 
 
