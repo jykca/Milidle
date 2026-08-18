@@ -29,16 +29,12 @@ const ostToggle = document.querySelector('#ostToggle');
 const everythingToggle = document.querySelector('#everythingToggle');
 const choice = document.querySelector('.choice');
 
-audioPlayer.preload = 'auto';
+audioPlayer.preload = 'metadata';
 
 audioPlayer.addEventListener('waiting', () => {
     if (!audioPlayer.paused) {
         playButton.innerHTML = "&#9203;";
     }
-});
-
-audioPlayer.addEventListener('playing', () => {
-    playButton.innerHTML = "&#10074;&#10074;";
 });
 
 let guessCount = Number(localStorage.getItem("guessCount")) || 0;
@@ -54,6 +50,7 @@ let ost = localStorage.getItem("ost") === "true";
 let everything = localStorage.getItem("everything") === "true";
 let startingLives = Number(localStorage.getItem("startingLives")) || 5;
 let dev = false;
+let audioReady = false;
 
 //get current date and time
 const startingDate = new Date("2026-8-12");
@@ -147,6 +144,8 @@ audioPlayer.addEventListener('loadedmetadata', () => {
     audioPlayer.pause();
     progressBar.value = 0;
 
+    audioReady = true;
+    playButton.disabled = false;
     playButton.innerHTML = "&#9654;";
 });
 
@@ -191,6 +190,7 @@ for (let i = 0; i < 5; i++) {
     const life = document.createElement("div");
     life.className = "heart";
     life.innerHTML = '❤️';
+    life.style.display = "none";
 
     guessTracker.appendChild(life);
 }
@@ -377,7 +377,7 @@ inputBox.addEventListener('keydown', (event) => {
     }
 });
 
-document.addEventListener("mousedown", (event) => {
+document.addEventListener("click", (event) => {
     //clicking outside hides the container
     if (resultContainer.classList.contains("active") && !resultContainer.contains(event.target)) {
         resultContainer.classList.remove("active");
@@ -409,12 +409,17 @@ inputBox.addEventListener('input', () => {
 });
 
 playButton.addEventListener("mousedown", () => {
-      if (audioPlayer.paused && audioPlayer.currentTime + 1 >= endTime) {
+
+    if (!audioReady) {
+        return;
+    }
+
+    if (audioPlayer.paused && audioPlayer.currentTime + 1 >= endTime) {
 
         // If the audio has finished playing, reset to start time and play again
         seekAudioTo(startTime, true);
 
-      } else if (audioPlayer.paused) {
+    } else if (audioPlayer.paused) {
 
         seekAudioTo(audioPlayer.currentTime, true);
 
@@ -786,6 +791,8 @@ function loadRandomSong(){
 function loadSong(song) {
     currentSong = song;
 
+    audioReady = false;
+    playButton.disabled = true;
     audioPlayer.pause();
     audioPlayer.currentTime = 0;
 
@@ -880,29 +887,27 @@ function skip(){
 }
 
 function seekAudioTo(targetTime, shouldPlay = false) {
-    const maxTime = Number.isFinite(audioPlayer.duration) ? audioPlayer.duration : targetTime;
-    const safeTarget = Math.min(Math.max(targetTime, 0), maxTime);
+    if (!audioReady) {
+        return;
+    }
 
-    const applySeek = () => {
-        audioPlayer.pause();
-        audioPlayer.currentTime = safeTarget;
+    const maxTime = Number.isFinite(audioPlayer.duration) ? audioPlayer.duration : 0;
 
-        if (shouldPlay) {
-            audioPlayer.play().then(() => {
-                playButton.innerHTML = "&#10074;&#10074;";
-                requestAnimationFrame(updateProgress);
-            }).catch(error => {
+    const safeTarget = Math.min(Math.max(targetTime, 0),maxTime);
+
+    audioPlayer.pause();
+    audioPlayer.currentTime = safeTarget;
+
+    if (shouldPlay) {
+        audioPlayer.play().then(() => {
+            playButton.innerHTML = "&#10074;&#10074;";
+            requestAnimationFrame(updateProgress);
+        }).catch(error => {
+            if (error.name !== "AbortError") {
                 console.error("Error:", error);
-            });
-        } else {
-            playButton.innerHTML = "&#9654;";
-        }
-    };
-
-    if (audioPlayer.readyState >= 1) {
-        applySeek();
+            }
+        });
     } else {
-        audioPlayer.addEventListener('loadedmetadata', applySeek, { once: true });
-        audioPlayer.load();
+        playButton.innerHTML = "&#9654;";
     }
 }
