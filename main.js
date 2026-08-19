@@ -33,7 +33,7 @@ audioPlayer.preload = 'metadata';
 
 audioPlayer.addEventListener('waiting', () => {
     if (!audioPlayer.paused) {
-        playButton.innerHTML = "&#9203;";
+        playButton.innerHTML = ". . .";
     }
 });
 
@@ -137,17 +137,17 @@ everythingToggle.addEventListener('change', () => {
     }
 });
 
-audioPlayer.addEventListener('loadeddata', () => {
+audioPlayer.addEventListener('loadedmetadata', () => {
     songLength = audioPlayer.duration;
+
+    audioReady = true;
+    playButton.disabled = false;
+    playButton.innerHTML = "&#9654;";
 
     setGuessTime();
 
     audioPlayer.pause();
     progressBar.value = 0;
-
-    audioReady = true;
-    playButton.disabled = false;
-    playButton.innerHTML = "&#9654;";
 });
 
 //volume bar
@@ -161,20 +161,25 @@ torinoImage.addEventListener("click", () => {
     window.open("https://x.com/july_sp_/status/1666155624068153344", "_blank");
 });
 
-// Stop playback after 5 seconds
-audioPlayer.addEventListener('timeupdate', () => {
-  if (audioPlayer.currentTime >= endTime) {
-    audioPlayer.pause();
-    playButton.innerHTML = "&#9654;";
-  } 
+let seekingProgress = false;
 
-  //progressBar.value = audioPlayer.currentTime - startTime;
+progressBar.addEventListener('pointerdown', () => {
+    seekingProgress = true;
 });
 
-progressBar.addEventListener('input', () => {
+progressBar.addEventListener('pointerup', () => {
+    seekingProgress = false;
+});
+
+progressBar.addEventListener('pointercancel', () => {
+    seekingProgress = false;
+});
+
+progressBar.addEventListener('change', () => {
     const targetTime = startTime + parseFloat(progressBar.value);
     seekAudioTo(targetTime, !audioPlayer.paused);
 });
+
 
 //creates 5 boxes for the guess tracker
 for (let i = 0; i < 5; i++) {
@@ -422,7 +427,14 @@ playButton.addEventListener("mousedown", () => {
 
     } else if (audioPlayer.paused) {
 
-        seekAudioTo(audioPlayer.currentTime, true);
+        audioPlayer.play().then(() => {
+            playButton.innerHTML = "&#10074;&#10074;";
+            requestAnimationFrame(updateProgress);
+        }).catch(error => {
+            if (error.name !== "AbortError") {
+                console.error("Audio play error:", error);
+            }
+        });
 
     } else {
 
@@ -452,7 +464,10 @@ function displaySongs(songList) {
 function updateProgress() {
     if (!audioPlayer.paused) {
         const progress = audioPlayer.currentTime - startTime;
-        progressBar.value = progress;
+
+        if (!seekingProgress) {
+            progressBar.value = progress;
+        }
 
         if (audioPlayer.currentTime >= endTime) {
             audioPlayer.pause();
@@ -549,14 +564,14 @@ function setGuessTime() {
     }
 
     if (dev == true){
-    console.log("Start Time: ", startTime);
-    console.log("End Time: ", endTime);
-    console.log("Metadata loaded!");
-    console.log("Loaded:", currentSong.name);
-    console.log("File:", songString);
-    console.log("Duration:", audioPlayer.duration);
-    //console.log("New song?", newEndlessSong);
-    //console.log("Lives Left:", livesLeft);
+        console.log("Start Time: ", startTime);
+        console.log("End Time: ", endTime);
+        console.log("Metadata loaded!");
+        console.log("Loaded:", currentSong.name);
+        console.log("File:", songString);
+        console.log("Duration:", audioPlayer.duration);
+        //console.log("New song?", newEndlessSong);
+        //console.log("Lives Left:", livesLeft);
     }
 
 };
@@ -575,8 +590,6 @@ function loadGameState() {
             correctToggle = false;
             return;
         }
-
-        setGuessTime();
 
         for (let i = 0; i < guessCount; i++) {
             boxes[i].style.backgroundColor = "#d44c4c";
@@ -795,7 +808,7 @@ function loadSong(song) {
     audioReady = false;
     playButton.disabled = true;
     audioPlayer.pause();
-    audioPlayer.currentTime = 0;
+    //audioPlayer.currentTime = 0;
 
     songString = 'https://pub-8e84e65d1165460e8d46caac325947e4.r2.dev/' + song.file;
     audioFile.src = songString;
@@ -894,21 +907,32 @@ function seekAudioTo(targetTime, shouldPlay = false) {
 
     const maxTime = Number.isFinite(audioPlayer.duration) ? audioPlayer.duration : 0;
 
-    const safeTarget = Math.min(Math.max(targetTime, 0),maxTime);
+    const safeTarget = Math.min(Math.max(targetTime, 0), maxTime);
 
     audioPlayer.pause();
-    audioPlayer.currentTime = safeTarget;
 
-    if (shouldPlay) {
+    const startPlayback = () => {
+        if (!shouldPlay) {
+            playButton.innerHTML = "&#9654;";
+            return;
+        }
+
         audioPlayer.play().then(() => {
             playButton.innerHTML = "&#10074;&#10074;";
             requestAnimationFrame(updateProgress);
         }).catch(error => {
             if (error.name !== "AbortError") {
-                console.error("Error:", error);
+                console.error("Audio play error:", error);
             }
         });
-    } else {
-        playButton.innerHTML = "&#9654;";
-    }
+    };
+
+    const onSeeked = () => {
+        audioPlayer.removeEventListener("seeked", onSeeked);
+        startPlayback();
+    };
+
+    audioPlayer.addEventListener("seeked", onSeeked);
+
+    audioPlayer.currentTime = safeTarget;
 }
