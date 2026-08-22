@@ -1,4 +1,6 @@
-# Milidle <img src="icon.png" alt="Mili" width="150">
+<h1>
+  Milidle <img src="icon.png" alt="Mili" width="40" height="40" align="center">
+</h1>
 A song guessing game for the artist Mili
 
 ## Links
