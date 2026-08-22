@@ -1,6 +1,6 @@
 # Milidle
 A song guessing game for the artist Mili
-![Mili Icon](Icon.png)
+![Mili Icon](icon.png)
 
 ## Links
 - [Mili on YouTube](https://www.youtube.com/@ProjectMili)
