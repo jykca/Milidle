@@ -88,14 +88,6 @@ let endlessStartTime = 0;
 let endlessEndTime = 0;
 let previousIndexs = [];
 
-localStorage.removeItem("endlessCurrentStreak");
-localStorage.removeItem("endlessLivesLeft");
-localStorage.removeItem("endlessStartTime");
-localStorage.removeItem("endlessEndTime");
-localStorage.removeItem("endlessPreviousIndexes");
-localStorage.removeItem("endlessSongFile");
-
-
 function fetchSongList(path) {
     return fetch(path).then(response => {
         if (!response.ok) {
@@ -192,6 +184,20 @@ volumeBar.addEventListener('input', () => {
     audioPlayer.volume = volumeBar.value; 
 });
 
+audioPlayer.addEventListener("timeupdate", () => {
+    if (audioPlayer.currentTime >= endTime) {
+        audioPlayer.pause();
+        audioPlayer.currentTime = endTime;
+    }
+});
+
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        audioPlayer.pause();
+        playButton.innerHTML = "&#9654;";
+    }
+});
+
 //source of image
 torinoImage.addEventListener("click", () => {
     window.open("https://x.com/july_sp_/status/1666155624068153344", "_blank");
@@ -230,7 +236,7 @@ const boxes = document.querySelectorAll('.guessBox');
 for (let i = 0; i < 5; i++) {
     const life = document.createElement("div");
     life.className = "heart";
-    life.innerHTML = '❤️';
+    life.innerHTML = '<i class="fa fa-heart" style="font-size:40px;color:rgb(237, 96, 96)"></i>';
     life.style.display = "none";
 
     guessTracker.appendChild(life);
@@ -479,11 +485,11 @@ playButton.addEventListener("mousedown", () => {
     }
 });
 
-reloadAudioButton.addEventListener("click", () => {
+function reloadSong(){
     if (currentSong) {
         loadSong(currentSong);
     }
-});
+}
 
 function displaySongs(songList) {
     //clear whatever was there before
@@ -521,14 +527,38 @@ function updateProgress() {
     }
 }
 
-function copyTextToClipboard(text) {
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(text).then(() => {
-            console.log('Text successfully copied to clipboard!');
-        })
-        .catch(err => {
-        console.error('Failed to copy text: ', err);
-        });
+async function copyTextToClipboard(text) {
+
+    try {
+        if (navigator.clipboard) {
+            await navigator.clipboard.writeText(text);
+            console.log("Text successfully copied to clipboard!");
+            return;
+        }
+
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        textArea.remove();
+        console.log("Text successfully copied to clipboard!");
+    } catch (err) {
+        console.error("Failed to share/copy text:", err);
+    }
+
+    if (navigator.share) {
+        try {
+            await navigator.share({ text });
+            console.log("Text shared successfully!");
+            return;
+        } catch (err) {
+            if (err.name === "AbortError") {
+                return;
+            }
+        }
     }
 }
 
@@ -538,13 +568,13 @@ function setGuessTime() {
 
         if (guessCount === 0) {
             startTime = Math.floor(0.2 * songLength);
-            snippetLength = 2;
+            snippetLength = 1;
         } else if (guessCount === 1) {
             startTime = Math.floor(0.4 * songLength);
-            snippetLength = 3;
+            snippetLength = 2;
         } else if (guessCount === 2) {
             startTime = Math.floor(0.6 * songLength);
-            snippetLength = 4;
+            snippetLength = 3;
         } else if (guessCount === 3) {
             startTime = Math.floor(0.8 * songLength);
             snippetLength = 5;
@@ -680,6 +710,12 @@ function printResults() {
         reslts.style.display = "none";
 
         restartButton.style.display = "flex";
+
+        if (previousIndexs.length >= songList.length) {
+            let livesUsed = startingLives - livesLeft;
+            shareMessage.innerHTML =  `I beat endless mode! I got ${currentStreak}/${songList.length} songs correct!<br>`;
+            return;
+        }
 
         if (currentStreak == 0) {
             shareMessage.innerHTML = `I didnt get any Mili songs in endless mode...<br>`;
@@ -825,7 +861,12 @@ function loadRandomSong(){
     previousIndexs = previousIndexs.filter(index => index < songList.length);
 
     if (previousIndexs.length >= songList.length) {
-        previousIndexs = []; //TODO: add smth cool for getting all the songs!!
+        audioPlayer.pause();
+        playButton.innerHTML = "&#9654;";
+        printResults();
+        restartButton.style.display = "flex";
+        resultsButton.style.display = "flex";
+        return
     }
 
     let randomIndex = Math.floor(Math.random() * songList.length);
@@ -936,9 +977,20 @@ function debug(){
 }
 
 function skip(){
-    if (mode == 1){
+    if (mode == 1 && previousIndexs.length < songList.length) {
+        const skip = document.createElement("div");
+
+        skip.className = "endlessGuess skipped";
+        skip.textContent = currentSong.name;
+        skip.style.backgroundColor = "gray";
+
+        endlessList.prepend(skip);
+
         loadRandomSong();
         console.log("Skipped song!");
+
+        inputBox.value = "";
+
         return;
     }
 }
