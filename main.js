@@ -188,6 +188,9 @@ audioPlayer.addEventListener("timeupdate", () => {
     if (audioPlayer.currentTime >= endTime) {
         audioPlayer.pause();
         audioPlayer.currentTime = endTime;
+    } else if (audioPlayer.currentTime < startTime) {
+        audioPlayer.pause();
+        audioPlayer.currentTime = startTime;
     }
 });
 
