@@ -138,7 +138,7 @@ Promise.all([
     loadNormal();
 }).catch(error => {
     console.error("Unable to initialize song lists:", error);
-    dayCounter.textContent = "Songs could not be loaded";
+    dayCounter.textContent = "Songs did not load :(";
     inputBox.disabled = true;
     playButton.disabled = true;
 });
@@ -166,7 +166,7 @@ everythingToggle.addEventListener('change', () => {
 });
 
 audioPlayer.addEventListener('loadedmetadata', () => {
-    songLength = audioPlayer.duration;
+    songLength = currentSong.duration;
 
     audioReady = true;
     playButton.disabled = false;
@@ -185,7 +185,7 @@ volumeBar.addEventListener('input', () => {
 });
 
 audioPlayer.addEventListener("timeupdate", () => {
-    if (audioPlayer.currentTime >= endTime) {
+    if (audioPlayer.currentTime > endTime) {
         audioPlayer.pause();
         audioPlayer.currentTime = endTime;
     } else if (audioPlayer.currentTime < startTime) {
@@ -570,24 +570,24 @@ function setGuessTime() {
         let snippetLength;
 
         if (guessCount === 0) {
-            startTime = Math.floor(0.2 * songLength);
+            startTime = Math.floor(0.2 * currentSong.duration);
             snippetLength = 1;
         } else if (guessCount === 1) {
-            startTime = Math.floor(0.4 * songLength);
+            startTime = Math.floor(0.4 * currentSong.duration);
             snippetLength = 2;
         } else if (guessCount === 2) {
-            startTime = Math.floor(0.6 * songLength);
+            startTime = Math.floor(0.6 * currentSong.duration);
             snippetLength = 3;
         } else if (guessCount === 3) {
-            startTime = Math.floor(0.8 * songLength);
+            startTime = Math.floor(0.8 * currentSong.duration);
             snippetLength = 5;
         } else if (guessCount === 4 || guessCount === 5) {
-            startTime = Math.floor(0.5 * songLength);
+            startTime = Math.floor(0.5 * currentSong.duration);
             snippetLength = 10;
         }
 
-        snippetLength = Math.min(snippetLength, songLength);
-        startTime = Math.min(startTime, Math.max(0, songLength - snippetLength));
+        snippetLength = Math.min(snippetLength, currentSong.duration);
+        startTime = Math.min(startTime, Math.max(0, currentSong.duration - snippetLength));
         endTime = startTime + snippetLength;
         progressBar.max = snippetLength;
         audioPlayer.currentTime = startTime;
@@ -613,11 +613,11 @@ function setGuessTime() {
                 snippitLength = 1;
             }
 
-            snippitLength = Math.min(snippitLength, songLength);
+            snippitLength = Math.min(snippitLength, currentSong.duration);
 
-            const safeStartPadding = Math.min(10, Math.max(0, (songLength - snippitLength) / 2));
-            const latestStart = Math.max(safeStartPadding, songLength - snippitLength - safeStartPadding);
-            const randomStartPoint = safeStartPadding + Math.random() * (latestStart - safeStartPadding);
+            const safeStartPadding = Math.min(10, Math.max(0, (currentSong.duration - snippitLength) / 2));
+            const latestStart = Math.max(safeStartPadding, currentSong.duration - snippitLength - safeStartPadding);
+            const randomStartPoint = Math.floor(safeStartPadding + Math.random() * (latestStart - safeStartPadding));
 
             progressBar.max = snippitLength;
             startTime = randomStartPoint;
@@ -897,6 +897,7 @@ function loadSong(song) {
     audioPlayer.pause();
     //audioPlayer.currentTime = 0;
 
+    //songString = 'Music\\' + song.file;
     songString = 'https://pub-8e84e65d1165460e8d46caac325947e4.r2.dev/' + song.file;
     audioFile.src = songString;
     audioPlayer.load();
@@ -945,39 +946,39 @@ function removeList(songArray){
 }
 
 function parseSongs(data) {
-        return data
-            .split("\n")
-            .map(line => line.trim())
-            .filter(line => line !== "")
-            .map(line => {
-                const [name, file] = line.split("|");
-
-                return {
-                    name: name.trim(),
-                    file: file.trim()
-                };
-            });
+    return data.split("\n").map(l => l.trim()).filter(Boolean).map(line => {
+        const [name, file, duration] = line.split("|");
+        return { name: name.trim(), file: file.trim(), duration: parseFloat(duration) };
+    });
 }
 
 function debug(){
     dev = !dev;
-    
-    audioPlayer.addEventListener('seeking', () => {
-        console.log("Seeking:", audioPlayer.currentTime);
-    });
-
-    audioPlayer.addEventListener('seeked', () => {
-        console.log("Seeked:", audioPlayer.currentTime);
-    });
-
-    audioPlayer.addEventListener('playing', () => {
-        console.log("Played:", audioPlayer.currentTime);
-    });
-
-    audioPlayer.addEventListener('waiting', () => {
-        console.log("Waiting:", audioPlayer.currentTime);
-    });
 }
+
+audioPlayer.addEventListener('seeking', () => {
+    if (dev) {
+        console.log("Seeking:", audioPlayer.currentTime);
+    }
+});
+
+audioPlayer.addEventListener('seeked', () => {
+    if (dev) {
+        console.log("Seeked:", audioPlayer.currentTime);
+    }
+});
+
+audioPlayer.addEventListener('playing', () => {
+    if (dev) {
+        console.log("Played:", audioPlayer.currentTime);
+    }
+});
+
+audioPlayer.addEventListener('waiting', () => {
+    if (dev) {
+        console.log("Waiting:", audioPlayer.currentTime);
+    }
+});
 
 function skip(){
     if (mode == 1 && previousIndexs.length < songList.length) {
@@ -1046,3 +1047,37 @@ function load(name) {
 
     loadSong(song);
 }
+
+
+
+/*TODO:
+
+Create a better looking drop down box
+Link to a video/song on youtube on the daily
+finish the niche song list
+get the data retreival from the skip button to find out whats breaking on mobile devices
+Create a more intresting backdrop
+Scale UI so the side buttons do not clip onto the side of the page on mobile
+make the help popup show up on the users first visit ever
+confetti!
+organize code + comments
+Links on bottom of the page linking to github repo & mili's socials
+swapping off the base audio element bar
+Top buttons seem hard to press on mobile?
+Make the endless mode copy message shorten after a certain amount of songs.
+**Make the audio file database hidden to the users. 
+I Am a Fluff is quiet. 
+
+******Large tasks:
+
+Lyric guessing mode
+Somehow prevent name drops in the audio clips?
+
+*/
+
+/*ideas for fixing audio:
+
+preload the next song in the background
+swapping to an actual domain? currently potentially rate limited
+
+*/
