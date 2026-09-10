@@ -290,11 +290,13 @@ configButton.addEventListener("click", () => {
 inputBox.onfocus = () => {
     //console.log(songString);
     songContainer.classList.add("active");
+    inputBox.classList.add("active");
     focusIndex = -1;
 }
 
 inputBox.onblur = () => {
     songContainer.classList.remove("active");
+    inputBox.classList.remove("active");
     focusIndex = -1;
 }
 
@@ -1053,7 +1055,6 @@ function load(name) {
 /*TODO:
 
 Create a better looking drop down box
-Link to a video/song on youtube on the daily
 finish the niche song list
 get the data retreival from the skip button to find out whats breaking on mobile devices
 Create a more intresting backdrop
@@ -1067,6 +1068,8 @@ Top buttons seem hard to press on mobile?
 Make the endless mode copy message shorten after a certain amount of songs.
 **Make the audio file database hidden to the users. 
 I Am a Fluff is quiet. 
+give them the full song after getting the song in the normal mode.
+Add special songs for april fools n haloween
 
 ******Large tasks:
 
