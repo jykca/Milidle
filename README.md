@@ -1,4 +1,4 @@
-# <img src="icon.png" alt="Mili" width="40" height="40"> Milidle 
+# <img src="elements\icon.png" alt="Mili" width="40" height="40"> Milidle 
 A song guessing game for the artist Mili!
 
 
