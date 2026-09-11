@@ -185,6 +185,10 @@ volumeBar.addEventListener('input', () => {
 });
 
 audioPlayer.addEventListener("timeupdate", () => {
+    if (audioPlayer.seeking || seekingProgress) {
+        return;
+    }
+
     if (audioPlayer.currentTime > endTime) {
         audioPlayer.pause();
         audioPlayer.currentTime = endTime;
@@ -461,7 +465,7 @@ inputBox.addEventListener('input', () => {
     displaySongs(filteredSongs);
 });
 
-playButton.addEventListener("mousedown", () => {
+playButton.addEventListener("click", () => {
 
     if (!audioReady) {
         return;
@@ -899,7 +903,7 @@ function loadSong(song) {
     audioPlayer.pause();
     //audioPlayer.currentTime = 0;
 
-    //songString = 'Music\\' + song.file;
+    //songString = 'Music\\CBR\\' + song.file;
     songString = 'https://pub-8e84e65d1165460e8d46caac325947e4.r2.dev/' + song.file;
     audioFile.src = songString;
     audioPlayer.load();
@@ -1011,8 +1015,11 @@ function seekAudioTo(targetTime, shouldPlay = false) {
     const safeTarget = Math.min(Math.max(targetTime, 0), maxTime);
 
     audioPlayer.pause();
+    seekingProgress = true;
 
     const startPlayback = () => {
+        seekingProgress = false;
+
         if (!shouldPlay) {
             playButton.innerHTML = "&#9654;";
             return;
@@ -1054,9 +1061,9 @@ function load(name) {
 
 /*TODO:
 
-Create a better looking drop down box
+
 finish the niche song list
-get the data retreival from the skip button to find out whats breaking on mobile devices
+Make it so mobile does not have a blank pause before playing
 Create a more intresting backdrop
 Scale UI so the side buttons do not clip onto the side of the page on mobile
 make the help popup show up on the users first visit ever
