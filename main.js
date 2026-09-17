@@ -29,6 +29,7 @@ const information2 = document.querySelector('.information2');
 const ostToggle = document.querySelector('#ostToggle');
 const everythingToggle = document.querySelector('#everythingToggle');
 const choice = document.querySelector('.choice');
+const volumeIcon = document.querySelector('.volumeIcon i');
 
 audioPlayer.preload = 'metadata';
 
@@ -182,7 +183,32 @@ audioPlayer.addEventListener('loadedmetadata', () => {
 audioPlayer.volume = volumeBar.value;
 volumeBar.addEventListener('input', () => {
     audioPlayer.volume = volumeBar.value; 
+
+    if (volumeBar.value == 0) {
+        volumeIcon.classList.remove("fa-volume-down");
+        volumeIcon.classList.remove("fa-volume-up");
+        volumeIcon.classList.add("fa-volume-off");
+
+    } else if (volumeBar.value > 0 && volumeBar.value <= 0.5) {
+        volumeIcon.classList.add("fa-volume-down");
+        volumeIcon.classList.remove("fa-volume-up");
+        volumeIcon.classList.remove("fa-volume-off");
+        
+    } else {
+        volumeIcon.classList.remove("fa-volume-down");
+        volumeIcon.classList.add("fa-volume-up");
+        volumeIcon.classList.remove("fa-volume-off");
+    }
 });
+
+function mute() {
+    if (audioPlayer.volume > 0) {
+        volumeBar.value = 0;
+        audioPlayer.volume = volumeBar.value; 
+        volumeIcon.classList.remove("fa-volume-down");
+        volumeIcon.classList.add("fa-volume-off");
+    }
+}
 
 audioPlayer.addEventListener("timeupdate", () => {
     if (audioPlayer.seeking || seekingProgress) {

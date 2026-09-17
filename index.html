@@ -8,6 +8,7 @@
 
     <link rel="icon" type="image/png" href="elements/icon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src='https://kit.fontawesome.com/a076d05399.js' crossorigin='anonymous'></script>
 
     <style>
       body {
@@ -804,8 +805,8 @@
 
     <!-- volume bar -->
     <div class = volumeContainer>
-      <p class="volumeIcon">🔊</p>
-      <input 
+      <p class="volumeIcon" onclick="mute()"><i class="fa fa-volume-down" style="font-size:25px;color:rgb(14, 82, 84);display:inline-block; width:25px;"></i></p>
+      <input  
         type="range" 
         class="volumeBar"
         min="0"
