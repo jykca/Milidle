@@ -116,14 +116,35 @@ Promise.all([
         addList(ostList);
     }
 
+    const monthDay = (currentDate.getMonth() + 1) + "-" + currentDate.getDate();
+
     everythingToggle.checked = everything;
-    if (everything) {
+    if (everything || monthDay == "4-1") {
         addList(nicheList);
     }
 
     // pick today's song using only normal
     const songIndex = daysPassed % normalList.length;
     songToday = normalList[songIndex];
+
+    if (monthDay == "10-31") {
+        songToday = normalList.find(song => song.name === "Phantomcat of Meowloween");
+    } else if (monthDay == "4-1") {
+        songToday = nicheList.find(song => song.name === "TOTO Washlet");
+    } else if (monthDay == "6-17") {
+        songToday = normalList.find(song => song.name === "Ga1ahad and Scientific Witchery");
+    } else if (monthDay == "9-8") {
+        songToday = normalList.find(song => song.name === "Nine Point Eight");
+    } else if (monthDay == "2-7") {
+        songToday = normalList.find(song => song.name === "Children of the City");
+    } else if (monthDay == "7-27") {
+        songToday = normalList.find(song => song.name === "Peach Pit and Cyanide");
+    } else if (monthDay == "2-14") {
+        songToday = normalList.find(song => song.name === "From a Place of Love");
+    } else if (monthDay == "12-21") {
+        songToday = normalList.find(song => song.name === "Mirror Mirror");
+    }
+
     currentSong = songToday;
 
     loadSong(songToday);

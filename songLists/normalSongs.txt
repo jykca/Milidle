@@ -55,6 +55,7 @@ Excalibur|excalibur.mp3|178.35
 Gertrauda|gertrauda.mp3|125.85
 Whiteout|whiteout.mp3|212.94
 Hero|hero.mp3|214.76
+Rendezvous|rendezvous.mp3|225.47
 Classroom Dreamer|classroom_dreamer.mp3|200.70
 A Turtle's Heart|a_turtles_heart.mp3|183.24
 In Hell We Live, Lament|in_hell_we_live_lament.mp3|225.34
@@ -68,6 +69,7 @@ Between Two Worlds (Let's Lament)|between_two_worlds_lets_lament.mp3|362.63
 GIVE ME RICE|give_me_rice.mp3|187.30
 Life We Sow|life_we_sow.mp3|209.08
 Friction|friction.mp3|159.97
+Utopiosphere -Platonism-|utopiosphere_platonism.mp3|131.21
 Bento Box Bivouac|bento_box_bivouac.mp3|252.85
 Petrolea|petrolea.mp3|261.00
 Sleep Talk Metropolis|sleep_talk_metropolis.mp3|243.26
@@ -75,6 +77,7 @@ Not My Paradiso|not_my_paradiso.mp3|263.34
 world.execute(me); (Key Ingredient Ver.)|world_execute_me_key_ingredient.mp3|224.50
 War of Shame|war_of_shame.mp3|175.00
 Victim|victim.mp3|230.54
+YUBIKIRI-GENMAN -special edit-|yubikiri_genman_special_edit.mp3|237.73
 Birthday Kid (Key Ingredient Ver.)|birthday_kid_key_ingredient.mp3|225.99
 Origin|origin.mp3|176.53
 Mitsubachi|mitsubachi.mp3|179.16
@@ -86,6 +89,7 @@ My Creator|my_creator.mp3|192.64
 Sloth|sloth.mp3|173.78
 Birthday Kid|birthday_kid.mp3|212.52
 Rightfully|rightfully.mp3|221.35
+Moon's Voice Ends, Heart's Light Shines|moons_voice_ends_hearts_light_shines.mp3|254.59
 Salt, Pepper, Birds, and the Thought Police|salt_pepper_birds_and_the_thought_police.mp3|244.09
 Chocological|chocological.mp3|260.48
 Sl0t|sl0t.mp3|290.28
@@ -111,6 +115,7 @@ Iron Lotus (Key Ingredient Ver.)|iron_lotus_key_ingredient.mp3|234.81
 Through Patches of Violet|through_patches_of_violet.mp3|232.85
 TOKYO NEON|tokyo_neon.mp3|255.31
 RTRT|rtrt.mp3|215.01
+Nine Point Eight -special edit-|nine_point_eight_special_edit.mp3|286.84
 Imagined Flight|imagined_flight.mp3|210.88
 Grown-up's Paradise|grown_ups_paradise.mp3|253.97
 MEN I LOVE|men_i_love.mp3|236.27
