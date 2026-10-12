@@ -31,7 +31,16 @@ const everythingToggle = document.querySelector('#everythingToggle');
 const choice = document.querySelector('.choice');
 const volumeIcon = document.querySelector('.volumeIcon i');
 
-audioPlayer.preload = 'metadata';
+const AUDIO_API = "https://milidle-audio.jykcajj.workers.dev";
+const DAILY_CLIP_LENGTHS = [1, 2, 3, 5, 10]; // seconds for guesses 1-5
+
+let endlessNonce = "";
+
+function generateEndlessNonce() {
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+audioPlayer.preload = 'auto';
 
 function getStoredInteger(key, fallback, min, max) {
     const value = Number.parseInt(localStorage.getItem(key), 10);
@@ -147,8 +156,6 @@ Promise.all([
 
     currentSong = songToday;
 
-    loadSong(songToday);
-
     // sort dropdown
     songList = [...songList].sort((a, b) =>
         a.name.localeCompare(b.name)
@@ -188,8 +195,7 @@ everythingToggle.addEventListener('change', () => {
 });
 
 audioPlayer.addEventListener('loadedmetadata', () => {
-    songLength = currentSong.duration;
-
+    
     audioReady = true;
     playButton.disabled = false;
     playButton.innerHTML = "&#9654;";
@@ -244,6 +250,10 @@ audioPlayer.addEventListener("timeupdate", () => {
         audioPlayer.currentTime = startTime;
     }
 });
+
+audioPlayer.addEventListener('ended', () => {
+      playButton.innerHTML = "&#9654;";
+  });
 
 document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
@@ -412,7 +422,7 @@ inputBox.addEventListener('keydown', (event) => {
             }
 
             guessCount++;
-            setGuessTime();
+            loadSong(currentSong);
 
         } else if (mode == 1) {
 
@@ -619,91 +629,35 @@ async function copyTextToClipboard(text) {
 }
 
 function setGuessTime() {
-    if (mode == 0) {
-        let snippetLength;
+    startTime = 0;
+    endTime = getClipLength();
+    progressBar.max = endTime;
+    audioPlayer.currentTime = 0;
 
-        if (guessCount === 0) {
-            startTime = Math.floor(0.2 * currentSong.duration);
-            snippetLength = 1;
-        } else if (guessCount === 1) {
-            startTime = Math.floor(0.4 * currentSong.duration);
-            snippetLength = 2;
-        } else if (guessCount === 2) {
-            startTime = Math.floor(0.6 * currentSong.duration);
-            snippetLength = 3;
-        } else if (guessCount === 3) {
-            startTime = Math.floor(0.8 * currentSong.duration);
-            snippetLength = 5;
-        } else if (guessCount === 4 || guessCount === 5) {
-            startTime = Math.floor(0.5 * currentSong.duration);
-            snippetLength = 10;
-        }
-
-        snippetLength = Math.min(snippetLength, currentSong.duration);
-        startTime = Math.min(startTime, Math.max(0, currentSong.duration - snippetLength));
-        endTime = startTime + snippetLength;
-        progressBar.max = snippetLength;
-        audioPlayer.currentTime = startTime;
-
-    } else if (mode == 1){
-        if (newEndlessSong){
-
-            let snippitLength = 10;
-
-            if (currentStreak <= 5) {
-                snippitLength = 10;
-                
-            } else if (currentStreak <= 10) {
-                snippitLength = 7;
-
-            } else if (currentStreak <= 20) {
-                snippitLength = 5;
-
-            } else if (currentStreak <= 100) {
-                snippitLength = 3;
-
-            } else if (currentStreak <= 200) {
-                snippitLength = 1;
-            }
-
-            snippitLength = Math.min(snippitLength, currentSong.duration);
-
-            const safeStartPadding = Math.min(10, Math.max(0, (currentSong.duration - snippitLength) / 2));
-            const latestStart = Math.max(safeStartPadding, currentSong.duration - snippitLength - safeStartPadding);
-            const randomStartPoint = Math.floor(safeStartPadding + Math.random() * (latestStart - safeStartPadding));
-
-            progressBar.max = snippitLength;
-            startTime = randomStartPoint;
-            endTime = startTime + snippitLength;
-
-            //for restoring purposes
-            endlessStartTime = startTime;
-            endlessEndTime = endTime;
-
-            newEndlessSong = false;
-
-        } else {
-            startTime = endlessStartTime;
-            endTime = endlessEndTime;
-
-            progressBar.max = endlessEndTime - endlessStartTime;
-        }
-        
-        audioPlayer.currentTime = startTime;
-    }
-
-    if (dev == true){
-        console.log("Start Time: ", startTime);
-        console.log("End Time: ", endTime);
-        console.log("Metadata loaded!");
+    if (dev == true) {
+        console.log("Clip length:", endTime);
         console.log("Loaded:", currentSong.name);
         console.log("File:", songString);
-        console.log("Duration:", audioPlayer.duration);
-        //console.log("New song?", newEndlessSong);
-        //console.log("Lives Left:", livesLeft);
+    }
+};
+
+function getClipLength() {
+    if (mode == 0) {
+        return DAILY_CLIP_LENGTHS[Math.min(guessCount, DAILY_CLIP_LENGTHS.length - 1)];
     }
 
-};
+    if (currentStreak <= 5) {
+        return 10;
+    } else if (currentStreak <= 10) {
+        return 7;
+    } else if (currentStreak <= 20) {
+        return 5;
+    } else if (currentStreak <= 100) {
+        return 3;
+    } else {
+        return 1;
+    }
+}
 
 function saveGameState(){
     localStorage.setItem("guessCount", guessCount);
@@ -933,6 +887,7 @@ function loadRandomSong(){
 
     //store the last song in endless
     endlessSong = songList[randomIndex];
+    endlessNonce = generateEndlessNonce();
 
     newEndlessSong = true;
 
@@ -941,17 +896,22 @@ function loadRandomSong(){
     loadSong(songList[randomIndex]);
 }
 
+function buildClipUrl(song) {
+    if (mode == 0) {
+        return `${AUDIO_API}/clip?s=${encodeURIComponent(song.id)}&m=d&g=${Math.min(guessCount, 4)}`;
+    }
+    return `${AUDIO_API}/clip?s=${encodeURIComponent(song.id)}&m=e&l=${getClipLength()}&n=${encodeURIComponent(endlessNonce)}`;
+}
 
 function loadSong(song) {
     currentSong = song;
 
     audioReady = false;
     playButton.disabled = true;
+    playButton.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
     audioPlayer.pause();
-    //audioPlayer.currentTime = 0;
 
-    //songString = 'Music\\CBR\\' + song.file;
-    songString = 'https://pub-8e84e65d1165460e8d46caac325947e4.r2.dev/' + song.file;
+    songString = buildClipUrl(song);
     audioFile.src = songString;
     audioPlayer.load();
 }
@@ -962,6 +922,7 @@ function restartEndless() {
     livesLeft = startingLives;
     endlessSong = null;
     previousIndexs = [];
+    endlessNonce = generateEndlessNonce();
 
     scoreCounter.textContent = "Current Streak: " + currentStreak;
     inputBox.value = "";
@@ -1000,8 +961,8 @@ function removeList(songArray){
 
 function parseSongs(data) {
     return data.split("\n").map(l => l.trim()).filter(Boolean).map(line => {
-        const [name, file, duration] = line.split("|");
-        return { name: name.trim(), file: file.trim(), duration: parseFloat(duration) };
+        const [name, id] = line.split("|");
+        return { name: name.trim(), id: id.trim() };
     });
 }
 
@@ -1108,8 +1069,6 @@ function load(name) {
 
 /*TODO:
 
-
-finish the niche song list
 Make it so mobile does not have a blank pause before playing
 Create a more intresting backdrop
 Scale UI so the side buttons do not clip onto the side of the page on mobile
@@ -1123,18 +1082,10 @@ Make the endless mode copy message shorten after a certain amount of songs.
 **Make the audio file database hidden to the users. 
 I Am a Fluff is quiet. 
 give them the full song after getting the song in the normal mode.
-Add special songs for april fools n haloween
 
 ******Large tasks:
 
 Lyric guessing mode
 Somehow prevent name drops in the audio clips?
-
-*/
-
-/*ideas for fixing audio:
-
-preload the next song in the background
-swapping to an actual domain? currently potentially rate limited
 
 */
