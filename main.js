@@ -3,6 +3,7 @@ const songContainer = document.querySelector('.songContainer');
 const audioFile = document.querySelector('.audioFile');
 const audioPlayer = document.querySelector('.audioPlayer');
 const playButton = document.querySelector('.playButton');
+const audioContainer = playButton.parentElement;
 const dayCounter = document.querySelector('.dayCounter');
 const resultContainer = document.querySelector('.resultContainer');
 const guessTracker = document.querySelector('.guessTracker');
@@ -19,9 +20,11 @@ const configButton = document.querySelector('.configButton');
 const torinoImage = document.querySelector('.torino');
 const body = document.querySelector('body');
 const endlessButton = document.querySelector('.endlessButton');
+const lyricButton = document.querySelector('.lyricButton');
 const reloadAudioButton = document.querySelector('.reloadAudioButton');
 const scoreCounter = document.querySelector('.scoreCounter');
 const endlessList = document.querySelector('.endlessList');
+const lyricGuessList = document.querySelector('.lyricGuessList');
 const restartButton = document.querySelector('.restartButton');
 const information = document.querySelector('.information');
 const information1 = document.querySelector('.information1');
@@ -60,6 +63,7 @@ audioPlayer.addEventListener('waiting', () => {
 
 let guessCount = getStoredInteger("guessCount", 0, 0, 5);
 let correctToggle = localStorage.getItem("correctToggle") === "true";
+let normalWrongGuesses = [];
 let focusIndex = -1;
 let maxStreak = getStoredInteger("streak", 0, 0, Number.MAX_SAFE_INTEGER);
 let currentStreak = 0;
@@ -74,11 +78,13 @@ let dev = false;
 let audioReady = false;
 
 //get current date and time
-const startingDate = new Date("2026-8-12");
+const startingDate = new Date(2026, 7, 12);
+const startingLyricDate = new Date(2026, 9, 26);
 const currentDate = new Date();
 const dateString = currentDate.toLocaleDateString();
 
 let daysPassed = Math.floor((currentDate - startingDate) / (1000 * 60 * 60 * 24));
+let daysPassedLyric = Math.floor((currentDate - startingLyricDate) / (1000 * 60 * 60 * 24));
 
 let songToday;
 let currentSong;
@@ -98,6 +104,23 @@ let endlessStartTime = 0;
 let endlessEndTime = 0;
 let previousIndexs = [];
 
+let lyricEntries = [];
+let lyricCompleted = false;
+let allSongs = [];
+let dailyLyricEntry = null;
+let dailyLyricSections = [];
+let dailyLyricStartIndex = 0;
+let lyricGuessCount = 0;
+let lyricWrongGuesses = [];
+let lyricWon = false;
+lyricButton.disabled = true;
+
+const LYRIC_TITLE_ALIASES = {
+    "NENTEN_JP": "-NENTEN-",
+    "NENTEN_CN": "-NENTEN-",
+    "With a Billion Worldful of Heart": "With a Billion Worldful of <3"
+};
+
 function fetchSongList(path) {
     return fetch(path).then(response => {
         if (!response.ok) {
@@ -111,14 +134,28 @@ function fetchSongList(path) {
 Promise.all([
     fetchSongList("songLists/normalSongs.txt"),
     fetchSongList("songLists/ostSongs.txt"),
-    fetchSongList("songLists/nicheSongs.txt")
-]).then(([normalData, ostData, nicheData]) => {
+    fetchSongList("songLists/nicheSongs.txt"),
+    fetchSongList("lyricOrder")
+]).then(([normalData, ostData, nicheData, lyricOrderData]) => {
 
     normalList = parseSongs(normalData);
     ostList = parseSongs(ostData);
     nicheList = parseSongs(nicheData);
+    allSongs = [...normalList, ...ostList, ...nicheList];
+    lyricEntries = lyricOrderData.split(/\r?\n/).map(name => name.trim()).filter(Boolean).map(fileName => {
+        const title = LYRIC_TITLE_ALIASES[fileName] || fileName;
+        const song = allSongs.find(candidate => candidate.name === title)
+            || allSongs.find(candidate => normalizeSongName(candidate.name) === normalizeSongName(title));
 
-    songList = [...normalList];
+        return {
+            fileName: fileName,
+            song: song || { name: title, id: "" }
+        };
+    });
+
+    const dailyIndex = ((daysPassedLyric % lyricEntries.length) + lyricEntries.length) % lyricEntries.length;
+    dailyLyricEntry = lyricEntries[dailyIndex];
+    currentSong = dailyLyricEntry.song;
 
     ostToggle.checked = ost;
     if (ost) {
@@ -131,6 +168,8 @@ Promise.all([
     if (everything || monthDay == "4-1") {
         addList(nicheList);
     }
+
+    songList = [...normalList];
 
     // pick today's song using only normal
     const songIndex = daysPassed % normalList.length;
@@ -161,12 +200,21 @@ Promise.all([
         a.name.localeCompare(b.name)
     );
 
-    displaySongs(songList);
+    return fetchSongList(`lyrics/${encodeURIComponent(dailyLyricEntry.fileName)}.txt`);
 
+}).then(lyricText => {
+
+    const sections = getLyricSections(lyricText);
+
+    dailyLyricSections = sections;
+    dailyLyricStartIndex = daysPassedLyric % Math.max(1, sections.length - 2);
+    displaySongs(getGuessableSongs());
     loadGameState();
     loadNormal();
+    lyricButton.disabled = false;
+
 }).catch(error => {
-    console.error("Unable to initialize song lists:", error);
+    console.error("Unable to initialize songs and today's lyric:", error);
     dayCounter.textContent = "Songs did not load :(";
     inputBox.disabled = true;
     playButton.disabled = true;
@@ -296,6 +344,17 @@ for (let i = 0; i < 5; i++) {
 
 const boxes = document.querySelectorAll('.guessBox');
 
+const lyricDisplay = document.createElement("div");
+lyricDisplay.className = "lyricDisplay";
+lyricDisplay.hidden = true;
+guessTracker.appendChild(lyricDisplay);
+
+const lyricHintDisplay = document.createElement("div");
+lyricHintDisplay.className = "lyricHintDisplay";
+lyricHintDisplay.hidden = true;
+lyricHintDisplay.style.marginTop = "20px";
+guessTracker.appendChild(lyricHintDisplay);
+
 //creates 5 lives for the endless mode 
 for (let i = 0; i < 5; i++) {
     const life = document.createElement("div");
@@ -347,7 +406,6 @@ configButton.addEventListener("click", () => {
     configContainer.classList.toggle("active");
 });
 
-
 inputBox.onfocus = () => {
     //console.log(songString);
     songContainer.classList.add("active");
@@ -363,21 +421,27 @@ inputBox.onblur = () => {
 
 inputBox.addEventListener('keydown', (event) => {
     
-    if (correctToggle && mode == 0 || guessCount == 5 && mode == 0 || livesLeft == 0 && mode == 1) {
+    if (correctToggle && mode == 0 || guessCount == 5 && mode == 0 || livesLeft == 0 && mode == 1 || mode == 2 && lyricCompleted) {
         return; // if the correct song is already guessed, stop taking more guesses
     }
 
-    if (event.key === 'Enter' && inputBox.value.toLowerCase() === currentSong.name.toLowerCase() && focusIndex == -1) {
+    const guess = inputBox.value.trim();
+
+    if (event.key === 'Enter' && guess.toLowerCase() === currentSong.name.toLowerCase() && focusIndex == -1) {
 
         console.log("Correct song entered!");
-        displaySongs(songList);
+        displaySongs(getGuessableSongs());
 
         if (mode == 0) {
+
             correctToggle = true;
             boxes[guessCount].style.backgroundColor = "#68c168"; // Change to green
+            renderNormalProgress();
+            inputBox.disabled = true;
             printResults();
 
         } else if (mode == 1) {
+
             currentStreak++;
             if (currentStreak>maxStreak) {
                 maxStreak = currentStreak;
@@ -396,15 +460,29 @@ inputBox.addEventListener('keydown', (event) => {
             scoreCounter.textContent = "Current Streak: " + currentStreak;
 
             loadRandomSong();
+
+        } else if (mode == 2) {
+
+            lyricCompleted = true;
+            lyricWon = true;
+            lyricGuessCount++;
+            renderLyricProgress();
+            saveLyricState();
+            localStorage.setItem("lyricCompletedDate", dateString);
+            inputBox.disabled = true;
+            printResults();
+
         }
         
         saveGameState();
         songContainer.classList.remove("active");
         
-    } else if (event.key === 'Enter' && inputBox.value.toLowerCase() !== currentSong.name.toLowerCase() && focusIndex == -1) {
+    } else if (event.key === 'Enter' && guess.toLowerCase() !== currentSong.name.toLowerCase() && focusIndex == -1) {
 
         //checks if the guess is a real guess
-        const songExists = songList.some(song => song.name.toLowerCase() === inputBox.value.toLowerCase());
+        const songExists = getGuessableSongs().some(song =>
+            song.name.toLowerCase() === guess.toLowerCase()
+        );
 
         if (songExists === false) {
             console.log("That song doesn't exist!");
@@ -412,10 +490,12 @@ inputBox.addEventListener('keydown', (event) => {
         }
 
         console.log("Incorrect song entered.");
-        displaySongs(songList);
+        displaySongs(getGuessableSongs());
 
         if (mode == 0){
             boxes[guessCount].style.backgroundColor = "#d44c4c"; // Change to red
+            normalWrongGuesses.push(guess);
+            renderNormalProgress();
             
             if (guessCount === 4) {
                 printResults();
@@ -459,11 +539,26 @@ inputBox.addEventListener('keydown', (event) => {
                 loadRandomSong();
             }
 
+        } else if (mode == 2) {
+            lyricGuessCount++;
+            lyricWrongGuesses.push(guess);
+            renderLyricProgress()
+            saveLyricState();
+
+            if (lyricGuessCount === 5) {
+                lyricCompleted = true;
+                lyricWon = false;
+                localStorage.setItem("lyricCompletedDate", dateString);
+                inputBox.disabled = true;
+                printResults();
+            }
         }
 
         inputBox.value = ""; //clear input
 
-        saveGameState();
+        if (mode !== 2) {
+            saveGameState();
+        }
     } 
 
     //lets the user navigate the dropdown with arrow keys
@@ -495,6 +590,7 @@ document.addEventListener("mousedown", (event) => {
     //clicking outside hides the container
     if (resultContainer.classList.contains("active") && !resultContainer.contains(event.target)) {
         resultContainer.classList.remove("active");
+        audioPlayer.pause();
     }
     if (helpContainer.classList.contains("active") && !helpContainer.contains(event.target)) {
         helpContainer.classList.remove("active");
@@ -510,6 +606,8 @@ shareButton.addEventListener("click", () => {
         shareMessageAndLink = "Day #" + (daysPassed + 1) + " - " + shareMessage.innerText + "\nhttps://milidle.vercel.app/";
     } else if (mode == 1) {
         shareMessageAndLink = shareMessage.innerText + "\nhttps://milidle.vercel.app/";
+    } else if (mode == 2) {
+        shareMessageAndLink = "Day #" + (daysPassedLyric + 1) + " - " + shareMessage.innerText + "\nhttps://milidle.vercel.app/";
     }
     
     copyTextToClipboard(shareMessageAndLink);
@@ -518,7 +616,7 @@ shareButton.addEventListener("click", () => {
 //reorder the dropdown based on the input
 inputBox.addEventListener('input', () => {
     const search = inputBox.value.toLowerCase();
-    const filteredSongs = songList.filter(song => song.name.toLowerCase().includes(search));
+    const filteredSongs = getGuessableSongs().filter(song => song.name.toLowerCase().includes(search));
     displaySongs(filteredSongs);
 });
 
@@ -642,6 +740,10 @@ function setGuessTime() {
 };
 
 function getClipLength() {
+    if (mode == 2) {
+        return DAILY_CLIP_LENGTHS[DAILY_CLIP_LENGTHS.length - 1];
+    }
+
     if (mode == 0) {
         return DAILY_CLIP_LENGTHS[Math.min(guessCount, DAILY_CLIP_LENGTHS.length - 1)];
     }
@@ -663,6 +765,7 @@ function saveGameState(){
     localStorage.setItem("guessCount", guessCount);
     localStorage.setItem("correctToggle", correctToggle);
     localStorage.setItem("date", dateString);
+    localStorage.setItem("normalWrongGuesses", JSON.stringify(normalWrongGuesses));
     localStorage.setItem("streak", maxStreak)
 }
 
@@ -671,27 +774,75 @@ function loadGameState() {
         if (localStorage.getItem("date") !== dateString) {
             guessCount = 0;
             correctToggle = false;
+            normalWrongGuesses = [];
+            renderNormalProgress();
+            saveGameState();
             return;
         }
 
-        for (let i = 0; i < guessCount; i++) {
-            boxes[i].style.backgroundColor = "#d44c4c";
+        try {
+            const savedGuesses = JSON.parse(localStorage.getItem("normalWrongGuesses") || "[]");
+            normalWrongGuesses = Array.isArray(savedGuesses)
+                ? savedGuesses.filter(guess => typeof guess === "string")
+                : [];
+        } catch (error) {
+            console.error("Unable to restore normal guesses:", error);
+            normalWrongGuesses = [];
         }
 
-        if (correctToggle && guessCount < boxes.length) {
-            boxes[guessCount].style.backgroundColor = "#68c168";
-            printResults();
-        } else if (correctToggle) {
-            correctToggle = false;
-            localStorage.setItem("correctToggle", "false");
+        renderNormalProgress();
+
+    } else if (mode == 2) {
+        if (localStorage.getItem("lyricCompletedDate") !== dateString) {
+            lyricGuessCount = 0;
+            lyricCompleted = false;
+            lyricWon = false;
         }
 
-        if (guessCount == 5) {
-            resultsButton.style.display = "flex";
-        }
-    } else if (mode == 1) {
-        // Endless state is restored when entering the mode after a refresh.
+        renderLyricProgress();
     }
+}
+
+function renderNormalProgress() {
+    lyricGuessList.innerHTML = "";
+
+    for (let i = 0; i < guessCount; i++) {
+        boxes[i].style.backgroundColor = "#d44c4c";
+    }
+
+    if (correctToggle && guessCount < boxes.length) {
+        boxes[guessCount].style.backgroundColor = "#68c168";
+        inputBox.disabled = true;
+        printResults();
+    } else if (correctToggle) {
+        correctToggle = false;
+        localStorage.setItem("correctToggle", "false");
+    }
+
+    if (guessCount == 5) {
+        inputBox.disabled = true;
+        resultsButton.style.display = "flex";
+    }
+
+    normalWrongGuesses.forEach(guess => {
+        const wrong = document.createElement("div");
+        wrong.className = "endlessGuess wrong";
+        wrong.textContent = guess;
+        wrong.style.backgroundColor = "#d44c4c";
+        lyricGuessList.prepend(wrong);
+    });
+
+    if (correctToggle) {
+        const correct = document.createElement("div");
+        correct.className = "endlessGuess correct";
+        correct.textContent = currentSong.name;
+        correct.style.backgroundColor = "#37c054";
+        lyricGuessList.prepend(correct);
+    }
+
+    lyricGuessList.style.display = normalWrongGuesses.length > 0 || correctToggle
+        ? "block"
+        : "none";
 }
 
 function printResults() {
@@ -703,11 +854,12 @@ function printResults() {
         //console.log(resultsButton);
 
         reslts.style.display = "block";
+        shareButton.textContent = "Share";
 
         reslts.innerHTML = `The correct answer was: <b>${songToday.name}</b>`;
 
         if (correctToggle) {
-            if (guessCount === 0) {
+            if (guessCount == 0) {
                 shareMessage.innerHTML = `I guessed today's Mili song in 1 guess!`;
             } else if (guessCount > 0) {
                 shareMessage.innerHTML = `I guessed today's Mili song in ${guessCount + 1} guesses!`;
@@ -718,6 +870,7 @@ function printResults() {
     } else if (mode == 1){
 
         reslts.style.display = "none";
+        shareButton.textContent = "Share";
 
         restartButton.style.display = "flex";
 
@@ -757,6 +910,28 @@ function printResults() {
                 
             }
         });
+    } else if (mode == 2) {
+
+        if (lyricWon && lyricGuessCount == 1) {
+            shareMessage.innerHTML = `I guessed today's lyric in 1 guess!`;
+        } else if (lyricWon && lyricGuessCount>1){
+            shareMessage.innerHTML = `I guessed today's lyric in ${lyricGuessCount} guesses!`;
+        } else {
+            shareMessage.innerHTML = `I couldn't guess today's lyric...`;
+        }
+
+        reslts.style.display = "block";
+        reslts.innerHTML = `The correct answer was: <b>${currentSong.name}</b>`;
+        shareButton.textContent = "Share";
+
+        playButton.style.display = "block";
+        playButton.disabled = !currentSong.id;
+        playButton.innerHTML = "&#9654;";
+
+        resultContainer.insertBefore(playButton, shareButton.nextSibling);
+        resultsButton.style.display = "flex";
+        
+        loadSong(currentSong);
     }
     
 }
@@ -766,29 +941,54 @@ function reset() {
     location.reload();
 }
 
-function switchMode() {
-    //console.log(endlessButton.textContent);
+endlessButton.addEventListener("click", () => switchMode(endlessButton));
+lyricButton.addEventListener("click", () => switchMode(lyricButton));
 
-    if (endlessButton.textContent == 'Endless Mode') {
-        mode = 1;
+//button switches with the mode it left
+function switchMode(button) {
+    const modeNames = ["Normal Mode", "Endless Mode", "Lyric Mode"];
+    const nextMode = modeNames.indexOf(button.textContent.trim());
 
-        loadEndless();
+    if (nextMode < 0 || nextMode == mode) {
+        return;
+    }
 
-        endlessButton.classList.add("normal");
-        body.classList.add("endlessMode");
-        endlessButton.textContent = 'Normal Mode';
-    } else {
-        mode = 0;
+    const previousMode = mode;
+    mode = nextMode;
+    button.textContent = modeNames[previousMode];
+    //button.classList.toggle("normal", button.textContent == "Normal Mode");
+    body.classList.toggle("endlessMode", mode == 1);
+    body.classList.toggle("lyricMode", mode == 2);
 
+    if (mode == 0) {
         loadNormal();
-
-        endlessButton.classList.remove("normal");
-        body.classList.remove("endlessMode");
-        endlessButton.textContent = 'Endless Mode';
+    } else if (mode == 1) {
+        loadEndless();
+    } else {
+        loadLyric();
     }
 }
 
 function loadEndless(){
+
+    audioContainer.appendChild(playButton);
+    displaySongs(getGuessableSongs());
+    shareButton.textContent = "Share";
+    lyricGuessList.style.display = "none";
+    inputBox.disabled = false;
+    playButton.style.display = "block";
+    volumeBar.style.display = "block";
+    volumeIcon.style.display = "block";
+    progressBar.style.display = "block";
+    audioContainer.style.display = "flex";
+    volumeBar.parentElement.style.display = "flex";
+    scoreCounter.style.display = "block";
+    guessTracker.classList.remove("lyricMode");
+    lyricDisplay.hidden = true;
+    guessTracker.style.height = "50px";
+    lyricHintDisplay.hidden = true;
+    inputBox.value = "";
+
     livesLeft = Math.min(livesLeft, startingLives);
 
     boxes.forEach(box => {
@@ -804,8 +1004,6 @@ function loadEndless(){
             life.style.display = "block";
         }
     });
-
-    inputBox.value = "";
 
     endlessList.style.display = "block"
 
@@ -830,6 +1028,24 @@ function loadEndless(){
 }
 
 function loadNormal() {
+
+    audioContainer.appendChild(playButton);
+    displaySongs(getGuessableSongs());
+    shareButton.textContent = "Share";
+    lyricGuessList.style.display = "none";
+    inputBox.disabled = false;
+    playButton.style.display = "block";
+    volumeBar.style.display = "block";
+    volumeIcon.style.display = "block";
+    progressBar.style.display = "block";
+    audioContainer.style.display = "flex";
+    volumeBar.parentElement.style.display = "flex";
+    scoreCounter.style.display = "block";
+    guessTracker.classList.remove("lyricMode");
+    lyricDisplay.hidden = true;
+    guessTracker.style.height = "50px";
+    lyricHintDisplay.hidden = true;
+    inputBox.value = "";
 
     boxes.forEach(box => {
         box.style.display = "block";
@@ -860,6 +1076,185 @@ function loadNormal() {
     information2.innerHTML = "You can listen to the song by pressing the play button. <br><br>Your guess has to be an existing song.  <br><br>AWAAWA songs, and some songs related to Mili may also be included. <br><br>Instrumental songs (Ender Lillies & Ender Magnolia soundtracks) are mostly excluded";
 
     loadGameState();
+}
+
+function loadLyric(){
+    audioContainer.appendChild(playButton);
+    audioPlayer.pause();
+    playButton.innerHTML = "&#9654;";
+
+    boxes.forEach(box => {
+        box.style.display = "none";
+    });
+
+    lives.forEach(life => {
+        life.style.display = "none";
+    });
+
+    endlessList.style.display = "none";
+    lyricGuessList.style.display = "none";
+    restartButton.style.display = "none";
+    resultsButton.style.display = "none";
+    playButton.style.display = "none";
+    volumeBar.style.display = "none";
+    volumeIcon.style.display = "none";
+    progressBar.style.display = "none";
+    audioContainer.style.display = "none";
+    volumeBar.parentElement.style.display = "none";
+    scoreCounter.style.display = "block";
+    boxes.forEach(box => {
+        box.style.display = "none";
+    });
+
+    helpButton.style.backgroundColor = "#87c4cb";
+    configButton.style.backgroundColor = "#87c4cb";
+
+    information.textContent = "How To Play Lyric Mode";
+    information1.textContent = "Guess the Mili song within 5 tries! ";
+    information2.innerHTML = "Enter a song title based on the lyric. <br><br>Wrong guesses will give you additional hints!";
+
+    guessTracker.classList.add("lyricMode");
+    guessTracker.style.height = "auto";
+    lyricDisplay.hidden = false;
+    resultContainer.classList.remove("active");
+    dayCounter.textContent = "Day " + (daysPassedLyric + 1) + " - " + dateString;
+    scoreCounter.textContent = "";
+    inputBox.value = "";
+
+    loadGameState();
+    displaySongs(getGuessableSongs());
+    loadDailyLyric();
+}
+
+function loadDailyLyric() {
+    currentSong = dailyLyricEntry.song;
+
+    const hasSavedLyricState = localStorage.getItem("lyricGuessDate") === dateString;
+
+    if (hasSavedLyricState) {
+        lyricGuessCount = Math.min(Number.parseInt(localStorage.getItem("lyricGuessCount"), 10) || 0, 5);
+    } else {
+        lyricGuessCount = 0;
+    }
+
+    lyricWon = hasSavedLyricState && localStorage.getItem("lyricWon") === "true";
+
+    if (hasSavedLyricState) {
+
+        try {
+            const savedGuesses = JSON.parse(localStorage.getItem("lyricWrongGuesses") || "[]");
+
+            if (Array.isArray(savedGuesses)) {
+                lyricWrongGuesses = savedGuesses.filter(guess => typeof guess === "string");
+            } else {
+                lyricWrongGuesses = [];
+            }
+
+        } catch (error) {
+            console.error("Unable to restore lyric guesses:", error);
+            lyricWrongGuesses = [];
+        }
+
+    } else {
+        lyricWrongGuesses = [];
+    }
+
+    lyricCompleted = localStorage.getItem("lyricCompletedDate") === dateString || lyricGuessCount === 5;
+
+    if (lyricCompleted && !hasSavedLyricState) {
+        lyricWon = true;
+        lyricGuessCount = 1;
+    }
+
+    renderLyricProgress();
+    inputBox.disabled = lyricCompleted;
+
+    if (lyricCompleted) {
+        resultsButton.style.display = "flex";
+    } else {
+        resultsButton.style.display = "none";
+    }
+
+    displaySongs(getGuessableSongs());
+}
+
+function saveLyricState() {
+    localStorage.setItem("lyricGuessDate", dateString);
+    localStorage.setItem("lyricGuessCount", lyricGuessCount);
+    localStorage.setItem("lyricWrongGuesses", JSON.stringify(lyricWrongGuesses));
+    localStorage.setItem("lyricWon", lyricWon);
+}
+
+function renderLyricProgress() {
+
+    let extraSections = Math.min(lyricWrongGuesses.length,2);
+
+    if (lyricWon) {
+        extraSections = 2;
+        printResults();
+    } 
+    
+    const visibleSections = dailyLyricSections.slice(
+        dailyLyricStartIndex,
+        dailyLyricStartIndex + extraSections + 1
+    );
+
+    lyricDisplay.textContent = visibleSections.join("\n\n");
+
+    if (lyricWrongGuesses.length >= 4 || lyricWon) {
+        lyricHintDisplay.textContent = `${currentSong.name.match(/\p{L}/u)?.[0] || currentSong.name.charAt(0)}` + currentSong.name.replace(/\p{L}/u, "").replace(/\p{L}/gu, "_");
+        lyricHintDisplay.hidden = false;
+    } else if (lyricWrongGuesses.length >= 3) {
+        lyricHintDisplay.textContent = `${currentSong.name.match(/\p{L}/u)?.[0] || currentSong.name.charAt(0)}...`;
+        lyricHintDisplay.hidden = false;
+    } else {
+        lyricHintDisplay.textContent = "";
+        lyricHintDisplay.hidden = true;
+    }
+
+    lyricGuessList.innerHTML = "";
+    lyricWrongGuesses.forEach(guess => {
+        const wrong = document.createElement("div");
+        wrong.className = "endlessGuess wrong";
+        wrong.textContent = guess;
+        wrong.style.backgroundColor = "#d44c4c";
+        lyricGuessList.prepend(wrong);
+    });
+
+    if (lyricWon) {
+        const correct = document.createElement("div");
+        correct.className = "endlessGuess correct";
+        correct.textContent = currentSong.name;
+        correct.style.backgroundColor = "#37c054";
+        lyricGuessList.prepend(correct);
+    }
+
+    if (lyricWrongGuesses.length > 0 || lyricWon) {
+        lyricGuessList.style.display = "block";
+    } else {
+        lyricGuessList.style.display = "none";
+    }
+}
+
+function getLyricSections(lyricText) {
+    return lyricText.trim().split(/\r?\n\s*\r?\n/).flatMap(section => {
+        const lines = section.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+        const chunks = [];
+
+        for (let index = 0; index < lines.length; index += 4) {
+            chunks.push(lines.slice(index, index + 4).join("\n"));
+        }
+
+        return chunks;
+    });
+}
+
+function getGuessableSongs() {
+    if (mode === 2) {
+        return [...new Map(lyricEntries.map(entry => [entry.song.name, entry.song])).values()];
+    }
+
+    return songList;
 }
 
 function loadRandomSong(){
@@ -900,6 +1295,9 @@ function buildClipUrl(song) {
     if (mode == 0) {
         return `${AUDIO_API}/clip?s=${encodeURIComponent(song.id)}&m=d&g=${Math.min(guessCount, 4)}`;
     }
+    if (mode == 2) {
+        return `${AUDIO_API}/clip?s=${encodeURIComponent(song.id)}&m=d&g=4`;
+    }
     return `${AUDIO_API}/clip?s=${encodeURIComponent(song.id)}&m=e&l=${getClipLength()}&n=${encodeURIComponent(endlessNonce)}`;
 }
 
@@ -907,6 +1305,7 @@ function loadSong(song) {
     currentSong = song;
 
     audioReady = false;
+    playButton.removeAttribute("title");
     playButton.disabled = true;
     playButton.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
     audioPlayer.pause();
@@ -966,6 +1365,10 @@ function parseSongs(data) {
     });
 }
 
+function normalizeSongName(name) {
+    return name.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 function debug(){
     dev = !dev;
 }
@@ -1018,7 +1421,10 @@ function seekAudioTo(targetTime, shouldPlay = false) {
         return;
     }
 
-    const maxTime = Number.isFinite(audioPlayer.duration) ? audioPlayer.duration : 0;
+    let maxTime = 0;
+    if (Number.isFinite(audioPlayer.duration)) {
+        maxTime = audioPlayer.duration;
+    }
 
     const safeTarget = Math.min(Math.max(targetTime, 0), maxTime);
 
@@ -1067,6 +1473,7 @@ function load(name) {
 
 
 
+
 /*TODO:
 
 Make it so mobile does not have a blank pause before playing
@@ -1079,13 +1486,11 @@ Links on bottom of the page linking to github repo & mili's socials
 swapping off the base audio element bar
 Top buttons seem hard to press on mobile?
 Make the endless mode copy message shorten after a certain amount of songs.
-**Make the audio file database hidden to the users. 
 I Am a Fluff is quiet. 
 give them the full song after getting the song in the normal mode.
 
 ******Large tasks:
 
-Lyric guessing mode
 Somehow prevent name drops in the audio clips?
 
 */
