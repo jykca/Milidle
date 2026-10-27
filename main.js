@@ -1111,7 +1111,7 @@ function loadLyric(){
 
     information.textContent = "How To Play Lyric Mode";
     information1.textContent = "Guess the Mili song within 5 tries! ";
-    information2.innerHTML = "Enter a song title based on the lyric. <br><br>Wrong guesses will give you additional hints!";
+    information2.innerHTML = "Enter a song title based on the lyric. <br><br>Wrong guesses will give you additional lyrics! <br><br>After 3 wrong guesses, you will get the first letter. <br><br>After 4 wrong guesses, you will get the amount of letters in the song.";
 
     guessTracker.classList.add("lyricMode");
     guessTracker.style.height = "auto";
@@ -1251,7 +1251,8 @@ function getLyricSections(lyricText) {
 
 function getGuessableSongs() {
     if (mode === 2) {
-        return [...new Map(lyricEntries.map(entry => [entry.song.name, entry.song])).values()];
+        return [...new Map(allSongs.map(song => [song.name, song])).values()]
+            .sort((a, b) => a.name.localeCompare(b.name));
     }
 
     return songList;
