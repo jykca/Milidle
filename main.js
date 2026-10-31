@@ -80,11 +80,52 @@ let audioReady = false;
 //get current date and time
 const startingDate = new Date(2026, 7, 12);
 const startingLyricDate = new Date(2026, 9, 26);
-const currentDate = new Date();
+const DAY_OVERRIDE_KEY = "a";
+const dayOverride = sessionStorage.getItem(DAY_OVERRIDE_KEY);
+const currentDate = dayOverride ? new Date(`${dayOverride}T12:00:00`) : new Date();
 const dateString = currentDate.toLocaleDateString();
 
-let daysPassed = Math.floor((currentDate - startingDate) / (1000 * 60 * 60 * 24));
-let daysPassedLyric = Math.floor((currentDate - startingLyricDate) / (1000 * 60 * 60 * 24));
+function getDayOffset(date, startDate) {
+    const dateUtc = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+    const startUtc = Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    return Math.round((dateUtc - startUtc) / 86400000);
+}
+
+let daysPassed = getDayOffset(currentDate, startingDate);
+let daysPassedLyric = getDayOffset(currentDate, startingLyricDate);
+
+function jumpToDay(day){
+    if (day === undefined) {
+        sessionStorage.removeItem(DAY_OVERRIDE_KEY);
+        window.location.reload();
+        return;
+    }
+
+    let targetDate;
+    if (Number.isSafeInteger(day) && day > 0) {
+        targetDate = new Date(startingDate);
+        targetDate.setDate(targetDate.getDate() + day - 1);
+    } else if (typeof day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(day)) {
+        const [year, month, date] = day.split("-").map(Number);
+        targetDate = new Date(year, month - 1, date, 12);
+
+        if (targetDate.getFullYear() !== year || targetDate.getMonth() !== month - 1 || targetDate.getDate() !== date) {
+            throw new RangeError("Invalid date.");
+        }
+    } else {
+        throw new TypeError("Use a positive day number, a YYYY-MM-DD date, or no argument to return to today.");
+    }
+
+    if (!Number.isFinite(targetDate.getTime())) {
+        throw new RangeError("Invalid date.");
+    }
+
+    const year = targetDate.getFullYear();
+    const month = String(targetDate.getMonth() + 1).padStart(2, "0");
+    const date = String(targetDate.getDate()).padStart(2, "0");
+    sessionStorage.setItem(DAY_OVERRIDE_KEY, `${year}-${month}-${date}`);
+    window.location.reload();
+};
 
 let songToday;
 let currentSong;
