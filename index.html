@@ -75,22 +75,30 @@
         align-items: center;
         justify-content: center;
         gap: 20px;
+        width: min(100%, 600px);
+        box-sizing: border-box;
+        padding: 0 12px;
         margin: 30px auto 0;
       }
 
       .titleContainer {
         position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
         text-align: center;
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
         margin-top: 20px
       }
 
       .helpButton {
         width: 30px;
         height: 30px;
-        position: absolute;
-        left: calc(100% + 25px);
-        top: 67.67%;
-        transform: translateY(-100%);
+        flex: 0 0 auto;
+        order: 1;
         border: 2px solid white;
         border-radius: 50%;
 
@@ -631,10 +639,8 @@
       .configButton {
         width: 30px;
         height: 30px;
-        position: absolute;
-        left: -50px;
-        top: 67.67%;
-        transform: translateY(-100%);
+        flex: 0 0 auto;
+        order: -1;
         border: 2px solid white;
         border-radius: 50%;
 
