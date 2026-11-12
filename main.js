@@ -4,7 +4,10 @@ const audioFile = document.querySelector('.audioFile');
 const audioPlayer = document.querySelector('.audioPlayer');
 const playButton = document.querySelector('.playButton');
 const audioContainer = playButton.parentElement;
+const dayNavigation = document.querySelector('.dayNavigation');
 const dayCounter = document.querySelector('.dayCounter');
+const previousDayButton = document.querySelector('.previousDayButton');
+const nextDayButton = document.querySelector('.nextDayButton');
 const resultContainer = document.querySelector('.resultContainer');
 const guessTracker = document.querySelector('.guessTracker');
 const progressBar = document.querySelector('.progressBar');
@@ -81,9 +84,49 @@ let audioReady = false;
 const startingDate = new Date(2026, 7, 12);
 const startingLyricDate = new Date(2026, 9, 26);
 const DAY_OVERRIDE_KEY = "a";
+const DAY_NAV_MODE_KEY = "dayNavigationMode";
 const dayOverride = sessionStorage.getItem(DAY_OVERRIDE_KEY);
-const currentDate = dayOverride ? new Date(`${dayOverride}T12:00:00`) : new Date();
+
+let currentDate = new Date();
+
+if (dayOverride) {
+    currentDate = new Date(`${dayOverride}T12:00:00`);
+}
+
 const dateString = currentDate.toLocaleDateString();
+const dateKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(currentDate.getDate()).padStart(2, "0")}`;
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
+function loadSavedState(key) {
+    const savedState = localStorage.getItem(key);
+    if (!savedState) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(savedState);
+    } catch (error) {
+        console.error(`Unable to restore saved game from ${key}:`, error);
+        return null;
+    }
+}
+
+function loadSavedGuesses(key) {
+    try {
+        const guesses = JSON.parse(localStorage.getItem(key) || "[]");
+        if (Array.isArray(guesses)) {
+            return guesses.filter(guess => typeof guess === "string");
+        }
+    } catch (error) {
+        console.error(`Unable to restore saved guesses from ${key}:`, error);
+    }
+
+    return [];
+}
+
+const normalGameStateKey = `normalGameState-${dateKey}`;
+const lyricGameStateKey = `lyricGameState-${dateKey}`;
 
 function getDayOffset(date, startDate) {
     const dateUtc = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
@@ -95,6 +138,7 @@ let daysPassed = getDayOffset(currentDate, startingDate);
 let daysPassedLyric = getDayOffset(currentDate, startingLyricDate);
 
 function jumpToDay(day){
+
     if (day === undefined) {
         sessionStorage.removeItem(DAY_OVERRIDE_KEY);
         window.location.reload();
@@ -105,6 +149,7 @@ function jumpToDay(day){
     if (Number.isSafeInteger(day) && day > 0) {
         targetDate = new Date(startingDate);
         targetDate.setDate(targetDate.getDate() + day - 1);
+
     } else if (typeof day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(day)) {
         const [year, month, date] = day.split("-").map(Number);
         targetDate = new Date(year, month - 1, date, 12);
@@ -112,6 +157,7 @@ function jumpToDay(day){
         if (targetDate.getFullYear() !== year || targetDate.getMonth() !== month - 1 || targetDate.getDate() !== date) {
             throw new RangeError("Invalid date.");
         }
+
     } else {
         throw new TypeError("Use a positive day number, a YYYY-MM-DD date, or no argument to return to today.");
     }
@@ -124,8 +170,70 @@ function jumpToDay(day){
     const month = String(targetDate.getMonth() + 1).padStart(2, "0");
     const date = String(targetDate.getDate()).padStart(2, "0");
     sessionStorage.setItem(DAY_OVERRIDE_KEY, `${year}-${month}-${date}`);
+
     window.location.reload();
 };
+
+function navigateDay(offset) {
+
+    if (mode !== 0 && mode !== 2) {
+        return;
+    }
+
+    const targetDate = new Date(currentDate);
+    targetDate.setDate(targetDate.getDate() + offset);
+    const firstDay = new Date(getFirstDay());
+    firstDay.setHours(0, 0, 0, 0);
+    targetDate.setHours(0, 0, 0, 0);
+
+    if (targetDate < firstDay || targetDate > today) {
+        return;
+    }
+
+    if (mode === 2) {
+        sessionStorage.setItem(DAY_NAV_MODE_KEY, "lyric");
+    } else {
+        sessionStorage.setItem(DAY_NAV_MODE_KEY, "normal");
+    }
+
+    if (targetDate.getTime() === today.getTime()) {
+        sessionStorage.removeItem(DAY_OVERRIDE_KEY);
+    } else {
+        const year = targetDate.getFullYear();
+        const month = String(targetDate.getMonth() + 1).padStart(2, "0");
+        const date = String(targetDate.getDate()).padStart(2, "0");
+        sessionStorage.setItem(DAY_OVERRIDE_KEY, `${year}-${month}-${date}`);
+    }
+
+    window.location.reload();
+}
+
+function getFirstDay() {
+    if (mode === 2) {
+        return startingLyricDate;
+    }
+
+    return startingDate;
+}
+
+function updateDayNavigation() {
+    if (mode !== 0 && mode !== 2) {
+        dayNavigation.style.display = "none";
+        return;
+    }
+
+    const firstDay = new Date(getFirstDay());
+    firstDay.setHours(0, 0, 0, 0);
+    const selectedDay = new Date(currentDate);
+    selectedDay.setHours(0, 0, 0, 0);
+
+    dayNavigation.style.display = "flex";
+    previousDayButton.disabled = selectedDay <= firstDay;
+    nextDayButton.disabled = selectedDay >= today;
+}
+
+previousDayButton.addEventListener("click", () => navigateDay(-1));
+nextDayButton.addEventListener("click", () => navigateDay(1));
 
 let songToday;
 let currentSong;
@@ -245,7 +353,7 @@ Promise.all([
 
 }).then(lyricText => {
 
-    const sections = getLyricSections(lyricText);
+    const sections = getLyricSections(lyricText, dailyLyricEntry.song.name);
 
     dailyLyricSections = sections;
     dailyLyricStartIndex = daysPassedLyric % Math.max(1, sections.length - 2);
@@ -253,6 +361,13 @@ Promise.all([
     loadGameState();
     loadNormal();
     lyricButton.disabled = false;
+
+    if (sessionStorage.getItem(DAY_NAV_MODE_KEY) === "lyric") {
+        sessionStorage.removeItem(DAY_NAV_MODE_KEY);
+        switchMode(lyricButton);
+    } else {
+        sessionStorage.removeItem(DAY_NAV_MODE_KEY);
+    }
 
 }).catch(error => {
     console.error("Unable to initialize songs and today's lyric:", error);
@@ -334,6 +449,7 @@ audioPlayer.addEventListener("timeupdate", () => {
     if (audioPlayer.currentTime > endTime) {
         audioPlayer.pause();
         audioPlayer.currentTime = endTime;
+        progressBar.value = progressBar.max;
     } else if (audioPlayer.currentTime < startTime) {
         audioPlayer.pause();
         audioPlayer.currentTime = startTime;
@@ -341,8 +457,9 @@ audioPlayer.addEventListener("timeupdate", () => {
 });
 
 audioPlayer.addEventListener('ended', () => {
-      playButton.innerHTML = "&#9654;";
-  });
+    progressBar.value = progressBar.max;
+    playButton.innerHTML = "&#9654;";
+});
 
 document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
@@ -515,7 +632,9 @@ inputBox.addEventListener('keydown', (event) => {
 
         }
         
-        saveGameState();
+        if (mode === 0) {
+            saveGameState();
+        }
         songContainer.classList.remove("active");
         
     } else if (event.key === 'Enter' && guess.toLowerCase() !== currentSong.name.toLowerCase() && focusIndex == -1) {
@@ -583,8 +702,7 @@ inputBox.addEventListener('keydown', (event) => {
         } else if (mode == 2) {
             lyricGuessCount++;
             lyricWrongGuesses.push(guess);
-            renderLyricProgress()
-            saveLyricState();
+            renderLyricProgress();
 
             if (lyricGuessCount === 5) {
                 lyricCompleted = true;
@@ -593,11 +711,12 @@ inputBox.addEventListener('keydown', (event) => {
                 inputBox.disabled = true;
                 printResults();
             }
+            saveLyricState();
         }
 
         inputBox.value = ""; //clear input
 
-        if (mode !== 2) {
+        if (mode === 0) {
             saveGameState();
         }
     } 
@@ -723,6 +842,7 @@ function updateProgress() {
         }
 
         if (audioPlayer.currentTime >= endTime) {
+            progressBar.value = progressBar.max;
             audioPlayer.pause();
             playButton.innerHTML = "&#9654;";
             return;
@@ -803,6 +923,12 @@ function getClipLength() {
 }
 
 function saveGameState(){
+    const savedState = {
+        guessCount: guessCount,
+        correctToggle: correctToggle,
+        wrongGuesses: normalWrongGuesses
+    };
+    localStorage.setItem(normalGameStateKey, JSON.stringify(savedState));
     localStorage.setItem("guessCount", guessCount);
     localStorage.setItem("correctToggle", correctToggle);
     localStorage.setItem("date", dateString);
@@ -812,35 +938,30 @@ function saveGameState(){
 
 function loadGameState() {
     if (mode == 0){
-        if (localStorage.getItem("date") !== dateString) {
-            guessCount = 0;
-            correctToggle = false;
-            normalWrongGuesses = [];
-            renderNormalProgress();
-            saveGameState();
-            return;
+        let savedState = loadSavedState(normalGameStateKey);
+        if (!savedState && localStorage.getItem("date") === dateString) {
+            savedState = {
+                guessCount: Number.parseInt(localStorage.getItem("guessCount"), 10),
+                correctToggle: localStorage.getItem("correctToggle") === "true",
+                wrongGuesses: loadSavedGuesses("normalWrongGuesses")
+            };
         }
 
-        try {
-            const savedGuesses = JSON.parse(localStorage.getItem("normalWrongGuesses") || "[]");
-            normalWrongGuesses = Array.isArray(savedGuesses)
-                ? savedGuesses.filter(guess => typeof guess === "string")
-                : [];
-        } catch (error) {
-            console.error("Unable to restore normal guesses:", error);
-            normalWrongGuesses = [];
+        guessCount = 0;
+        correctToggle = false;
+        normalWrongGuesses = [];
+        if (savedState) {
+            if (Number.isInteger(savedState.guessCount)) {
+                guessCount = Math.min(Math.max(savedState.guessCount, 0), 5);
+            }
+
+            correctToggle = savedState.correctToggle === true;
+            if (Array.isArray(savedState.wrongGuesses)) {
+                normalWrongGuesses = savedState.wrongGuesses.filter(guess => typeof guess === "string");
+            }
         }
 
         renderNormalProgress();
-
-    } else if (mode == 2) {
-        if (localStorage.getItem("lyricCompletedDate") !== dateString) {
-            lyricGuessCount = 0;
-            lyricCompleted = false;
-            lyricWon = false;
-        }
-
-        renderLyricProgress();
     }
 }
 
@@ -1012,6 +1133,7 @@ function switchMode(button) {
 
 function loadEndless(){
 
+    updateDayNavigation();
     audioContainer.appendChild(playButton);
     displaySongs(getGuessableSongs());
     shareButton.textContent = "Share";
@@ -1070,6 +1192,7 @@ function loadEndless(){
 
 function loadNormal() {
 
+    updateDayNavigation();
     audioContainer.appendChild(playButton);
     displaySongs(getGuessableSongs());
     shareButton.textContent = "Share";
@@ -1120,6 +1243,7 @@ function loadNormal() {
 }
 
 function loadLyric(){
+    updateDayNavigation();
     audioContainer.appendChild(playButton);
     audioPlayer.pause();
     playButton.innerHTML = "&#9654;";
@@ -1162,7 +1286,6 @@ function loadLyric(){
     scoreCounter.textContent = "";
     inputBox.value = "";
 
-    loadGameState();
     displaySongs(getGuessableSongs());
     loadDailyLyric();
 }
@@ -1170,39 +1293,36 @@ function loadLyric(){
 function loadDailyLyric() {
     currentSong = dailyLyricEntry.song;
 
-    const hasSavedLyricState = localStorage.getItem("lyricGuessDate") === dateString;
-
-    if (hasSavedLyricState) {
-        lyricGuessCount = Math.min(Number.parseInt(localStorage.getItem("lyricGuessCount"), 10) || 0, 5);
-    } else {
-        lyricGuessCount = 0;
+    let savedState = loadSavedState(lyricGameStateKey);
+    if (!savedState && (localStorage.getItem("lyricGuessDate") === dateString
+        || localStorage.getItem("lyricCompletedDate") === dateString)) {
+        savedState = {
+            guessCount: Number.parseInt(localStorage.getItem("lyricGuessCount"), 10) || 0,
+            wrongGuesses: loadSavedGuesses("lyricWrongGuesses"),
+            won: localStorage.getItem("lyricWon") === "true",
+            completed: localStorage.getItem("lyricCompletedDate") === dateString
+        };
     }
 
-    lyricWon = hasSavedLyricState && localStorage.getItem("lyricWon") === "true";
-
-    if (hasSavedLyricState) {
-
-        try {
-            const savedGuesses = JSON.parse(localStorage.getItem("lyricWrongGuesses") || "[]");
-
-            if (Array.isArray(savedGuesses)) {
-                lyricWrongGuesses = savedGuesses.filter(guess => typeof guess === "string");
-            } else {
-                lyricWrongGuesses = [];
-            }
-
-        } catch (error) {
-            console.error("Unable to restore lyric guesses:", error);
-            lyricWrongGuesses = [];
+    lyricGuessCount = 0;
+    lyricWon = false;
+    lyricWrongGuesses = [];
+    lyricCompleted = false;
+    if (savedState) {
+        if (Number.isInteger(savedState.guessCount)) {
+            lyricGuessCount = Math.min(Math.max(savedState.guessCount, 0), 5);
         }
-
-    } else {
-        lyricWrongGuesses = [];
+        lyricWon = savedState.won === true;
+        if (Array.isArray(savedState.wrongGuesses)) {
+            lyricWrongGuesses = savedState.wrongGuesses.filter(guess => typeof guess === "string");
+        }
+        lyricCompleted = savedState.completed === true;
+    }
+    if (lyricGuessCount === 5) {
+        lyricCompleted = true;
     }
 
-    lyricCompleted = localStorage.getItem("lyricCompletedDate") === dateString || lyricGuessCount === 5;
-
-    if (lyricCompleted && !hasSavedLyricState) {
+    if (lyricCompleted && lyricGuessCount === 0) {
         lyricWon = true;
         lyricGuessCount = 1;
     }
@@ -1220,6 +1340,13 @@ function loadDailyLyric() {
 }
 
 function saveLyricState() {
+    const savedState = {
+        guessCount: lyricGuessCount,
+        wrongGuesses: lyricWrongGuesses,
+        won: lyricWon,
+        completed: lyricCompleted
+    };
+    localStorage.setItem(lyricGameStateKey, JSON.stringify(savedState));
     localStorage.setItem("lyricGuessDate", dateString);
     localStorage.setItem("lyricGuessCount", lyricGuessCount);
     localStorage.setItem("lyricWrongGuesses", JSON.stringify(lyricWrongGuesses));
@@ -1277,8 +1404,11 @@ function renderLyricProgress() {
     }
 }
 
-function getLyricSections(lyricText) {
-    return lyricText.trim().split(/\r?\n\s*\r?\n/).flatMap(section => {
+function getLyricSections(lyricText, songTitle) {
+    const escapedTitle = songTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const maskedLyrics = lyricText.replace(new RegExp(escapedTitle, "gi"), "_______");
+
+    return maskedLyrics.trim().split(/\r?\n\s*\r?\n/).flatMap(section => {
         const lines = section.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
         const chunks = [];
 
@@ -1519,8 +1649,6 @@ function load(name) {
 /*TODO:
 
 Make it so mobile does not have a blank pause before playing
-Create a more intresting backdrop
-Scale UI so the side buttons do not clip onto the side of the page on mobile
 make the help popup show up on the users first visit ever
 confetti!
 organize code + comments
